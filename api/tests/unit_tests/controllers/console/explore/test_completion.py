@@ -410,16 +410,14 @@ class TestChatApi:
         method = unwrap(api.post)
 
         with (
-            (
-                app.test_request_context("/", json={}),
-                payload_patch,
-                patch.object(
-                    completion_module.ConversationService,
-                    "get_conversation",
-                    get_conversation_mock,
-                ),
-                patch.object(completion_module.AppGenerateService, "generate", generate_mock),
+            app.test_request_context("/", json={}),
+            payload_patch,
+            patch.object(
+                completion_module.ConversationService,
+                "get_conversation",
+                get_conversation_mock,
             ),
+            patch.object(completion_module.AppGenerateService, "generate", generate_mock),
             pytest.raises(completion_module.NotFound),
         ):
             method(

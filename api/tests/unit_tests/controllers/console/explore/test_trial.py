@@ -956,10 +956,8 @@ class TestTrialChatAudioApi:
         method = unwrap(api.post)
 
         with (
-            (
-                app.test_request_context("/", method="POST", data={}, content_type="multipart/form-data"),
-                patch.object(module.AudioService, "transcript_asr", side_effect=fake_asr),
-            ),
+            app.test_request_context("/", method="POST", data={}, content_type="multipart/form-data"),
+            patch.object(module.AudioService, "transcript_asr", side_effect=fake_asr),
             pytest.raises(module.NoAudioUploadedError) as exc_info,
         ):
             method(
@@ -1068,12 +1066,10 @@ class TestTrialChatAudioApi:
         file_data = _file_data()
 
         with (
-            (
-                app.test_request_context(
-                    "/", method="POST", data={"file": (file_data, "test.wav")}, content_type="multipart/form-data"
-                ),
-                patch.object(module.AudioService, "transcript_asr", side_effect=ProviderTokenNotInitError("test")),
+            app.test_request_context(
+                "/", method="POST", data={"file": (file_data, "test.wav")}, content_type="multipart/form-data"
             ),
+            patch.object(module.AudioService, "transcript_asr", side_effect=ProviderTokenNotInitError("test")),
             pytest.raises(ProviderNotInitializeError),
         ):
             method(
@@ -1089,12 +1085,10 @@ class TestTrialChatAudioApi:
         file_data = _file_data()
 
         with (
-            (
-                app.test_request_context(
-                    "/", method="POST", data={"file": (file_data, "test.wav")}, content_type="multipart/form-data"
-                ),
-                patch.object(module.AudioService, "transcript_asr", side_effect=QuotaExceededError()),
+            app.test_request_context(
+                "/", method="POST", data={"file": (file_data, "test.wav")}, content_type="multipart/form-data"
             ),
+            patch.object(module.AudioService, "transcript_asr", side_effect=QuotaExceededError()),
             pytest.raises(ProviderQuotaExceededError),
         ):
             method(
@@ -1227,10 +1221,8 @@ class TestTrialChatTextApi:
         method = unwrap(api.post)
 
         with (
-            (
-                app.test_request_context("/", json={"text": "hello", "voice": "en-US"}),
-                patch.object(module.AudioService, "transcript_tts", side_effect=ProviderTokenNotInitError("test")),
-            ),
+            app.test_request_context("/", json={"text": "hello", "voice": "en-US"}),
+            patch.object(module.AudioService, "transcript_tts", side_effect=ProviderTokenNotInitError("test")),
             pytest.raises(ProviderNotInitializeError),
         ):
             method(
@@ -1245,10 +1237,8 @@ class TestTrialChatTextApi:
         method = unwrap(api.post)
 
         with (
-            (
-                app.test_request_context("/", json={"text": "hello", "voice": "en-US"}),
-                patch.object(module.AudioService, "transcript_tts", side_effect=QuotaExceededError()),
-            ),
+            app.test_request_context("/", json={"text": "hello", "voice": "en-US"}),
+            patch.object(module.AudioService, "transcript_tts", side_effect=QuotaExceededError()),
             pytest.raises(ProviderQuotaExceededError),
         ):
             method(
@@ -1263,10 +1253,8 @@ class TestTrialChatTextApi:
         method = unwrap(api.post)
 
         with (
-            (
-                app.test_request_context("/", json={"text": "hello", "voice": "en-US"}),
-                patch.object(module.AudioService, "transcript_tts", side_effect=ModelCurrentlyNotSupportError()),
-            ),
+            app.test_request_context("/", json={"text": "hello", "voice": "en-US"}),
+            patch.object(module.AudioService, "transcript_tts", side_effect=ModelCurrentlyNotSupportError()),
             pytest.raises(ProviderModelCurrentlyNotSupportError),
         ):
             method(
@@ -1281,10 +1269,8 @@ class TestTrialChatTextApi:
         method = unwrap(api.post)
 
         with (
-            (
-                app.test_request_context("/", json={"text": "hello", "voice": "en-US"}),
-                patch.object(module.AudioService, "transcript_tts", side_effect=InvokeError("test error")),
-            ),
+            app.test_request_context("/", json={"text": "hello", "voice": "en-US"}),
+            patch.object(module.AudioService, "transcript_tts", side_effect=InvokeError("test error")),
             pytest.raises(CompletionRequestError),
         ):
             method(

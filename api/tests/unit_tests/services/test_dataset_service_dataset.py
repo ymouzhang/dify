@@ -564,10 +564,8 @@ class TestDatasetServiceCreationAndUpdate:
         dataset.name = "Old Dataset"
 
         with (
-            (
-                patch.object(DatasetService, "get_dataset", return_value=dataset),
-                patch.object(DatasetService, "_has_dataset_same_name", return_value=True),
-            ),
+            patch.object(DatasetService, "get_dataset", return_value=dataset),
+            patch.object(DatasetService, "_has_dataset_same_name", return_value=True),
             pytest.raises(ValueError, match="Dataset name already exists"),
         ):
             DatasetService.update_dataset(

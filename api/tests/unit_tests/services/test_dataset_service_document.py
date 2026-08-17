@@ -205,10 +205,8 @@ class TestDocumentServiceMutations:
         session = MagicMock()
 
         with (
-            (
-                patch.object(DatasetService, "get_dataset", return_value=dataset),
-                patch.object(DocumentService, "get_document", return_value=None),
-            ),
+            patch.object(DatasetService, "get_dataset", return_value=dataset),
+            patch.object(DocumentService, "get_document", return_value=None),
             pytest.raises(ValueError, match="Document not found"),
         ):
             DocumentService.rename_document(dataset.id, "doc-1", "New Name", session)
@@ -219,10 +217,8 @@ class TestDocumentServiceMutations:
         session = MagicMock()
 
         with (
-            (
-                patch.object(DatasetService, "get_dataset", return_value=dataset),
-                patch.object(DocumentService, "get_document", return_value=document),
-            ),
+            patch.object(DatasetService, "get_dataset", return_value=dataset),
+            patch.object(DocumentService, "get_document", return_value=document),
             pytest.raises(ValueError, match="No permission"),
         ):
             DocumentService.rename_document(dataset.id, document.id, "New Name", session)
