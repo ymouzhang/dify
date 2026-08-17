@@ -2078,6 +2078,7 @@ export type DeleteAgentByAgentIdData = {
 
 export type DeleteAgentByAgentIdErrors = {
   403: unknown
+  409: unknown
 }
 
 export type DeleteAgentByAgentIdResponses = {

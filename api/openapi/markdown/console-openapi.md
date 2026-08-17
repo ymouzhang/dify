@@ -362,6 +362,7 @@ Check if activation token is valid
 | ---- | ----------- |
 | 204 | Agent app deleted successfully |
 | 403 | Insufficient permissions |
+| 409 | Agent is still referenced by an active workflow |
 
 ### [GET] /agent/{agent_id}
 #### Parameters
