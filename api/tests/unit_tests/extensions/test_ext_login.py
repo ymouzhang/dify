@@ -1,4 +1,5 @@
 import json
+from collections.abc import Callable
 from typing import cast
 from unittest import mock
 
@@ -87,7 +88,9 @@ def test_on_user_logged_in_logs_unsupported_user_type(caplog: pytest.LogCaptureF
     assert "Failed to set logging identity context" in caplog.text
 
 
-def test_admin_api_key_header_takes_precedence_over_console_cookie(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_admin_api_key_header_takes_precedence_over_console_cookie(
+    config_overrides: Callable[..., None],
+) -> None:
     app = Flask(__name__)
     session = mock.Mock(spec=ext_login.Session)
     tenant = ext_login.Tenant(name="Test Tenant")
@@ -100,11 +103,13 @@ def test_admin_api_key_header_takes_precedence_over_console_cookie(monkeypatch: 
     session.execute.return_value.one_or_none.return_value = (tenant, tenant_account_join)
     session.scalar.side_effect = [account, tenant_account_join]
     session.scalars.return_value.one.return_value = tenant
-    monkeypatch.setattr(ext_login.dify_config, "ADMIN_API_KEY_ENABLE", True)
-    monkeypatch.setattr(ext_login.dify_config, "ADMIN_API_KEY", "admin-key")
-    monkeypatch.setattr(ext_login.dify_config, "CONSOLE_WEB_URL", "http://console.example.com")
-    monkeypatch.setattr(ext_login.dify_config, "CONSOLE_API_URL", "http://api.example.com")
-    monkeypatch.setattr(ext_login.dify_config, "COOKIE_DOMAIN", "")
+    config_overrides(
+        ADMIN_API_KEY_ENABLE=True,
+        ADMIN_API_KEY="admin-key",
+        CONSOLE_WEB_URL="http://console.example.com",
+        CONSOLE_API_URL="http://api.example.com",
+        COOKIE_DOMAIN="",
+    )
 
     with app.test_request_context(
         "/console/api/test",

@@ -1,6 +1,6 @@
+from collections.abc import Callable
 from unittest.mock import MagicMock, patch
 
-from configs import dify_config
 from controllers.web import site as site_module
 from enums import DeploymentEdition
 from extensions.storage.storage_type import StorageType
@@ -42,15 +42,14 @@ def test_app_site_api_returns_legacy_agent_compatible_mode() -> None:
     )
 
 
-def test_build_site_icon_url_uses_s3_presigned_url() -> None:
+def test_build_site_icon_url_uses_s3_presigned_url(config_overrides: Callable[..., None]) -> None:
+    config_overrides(DEPLOYMENT_EDITION=DeploymentEdition.CLOUD, STORAGE_TYPE=StorageType.S3)
     site = Site(
         icon_type=IconType.IMAGE,
         icon="11111111-1111-4111-8111-111111111111",
     )
 
     with (
-        patch.object(dify_config, "DEPLOYMENT_EDITION", DeploymentEdition.CLOUD),
-        patch.object(dify_config, "STORAGE_TYPE", StorageType.S3),
         patch.object(site_module, "db") as mock_db,
         patch.object(site_module, "FileService") as mock_file_service,
         patch.object(site_module, "build_icon_url") as mock_build_icon_url,
@@ -70,15 +69,16 @@ def test_build_site_icon_url_uses_s3_presigned_url() -> None:
     mock_build_icon_url.assert_not_called()
 
 
-def test_build_site_icon_url_keeps_preview_url_for_self_hosted_s3() -> None:
+def test_build_site_icon_url_keeps_preview_url_for_self_hosted_s3(
+    config_overrides: Callable[..., None],
+) -> None:
+    config_overrides(DEPLOYMENT_EDITION=DeploymentEdition.COMMUNITY, STORAGE_TYPE=StorageType.S3)
     site = Site(
         icon_type=IconType.IMAGE,
         icon="11111111-1111-4111-8111-111111111111",
     )
 
     with (
-        patch.object(dify_config, "DEPLOYMENT_EDITION", DeploymentEdition.COMMUNITY),
-        patch.object(dify_config, "STORAGE_TYPE", StorageType.S3),
         patch.object(site_module, "FileService") as mock_file_service,
         patch.object(site_module, "build_icon_url", return_value="https://api.example.com/files/icon/file-preview"),
     ):
@@ -88,15 +88,16 @@ def test_build_site_icon_url_keeps_preview_url_for_self_hosted_s3() -> None:
     mock_file_service.assert_not_called()
 
 
-def test_build_site_icon_url_keeps_preview_url_for_non_s3_storage() -> None:
+def test_build_site_icon_url_keeps_preview_url_for_non_s3_storage(
+    config_overrides: Callable[..., None],
+) -> None:
+    config_overrides(DEPLOYMENT_EDITION=DeploymentEdition.CLOUD, STORAGE_TYPE=StorageType.LOCAL)
     site = Site(
         icon_type=IconType.IMAGE,
         icon="11111111-1111-4111-8111-111111111111",
     )
 
     with (
-        patch.object(dify_config, "DEPLOYMENT_EDITION", DeploymentEdition.CLOUD),
-        patch.object(dify_config, "STORAGE_TYPE", StorageType.LOCAL),
         patch.object(site_module, "FileService") as mock_file_service,
         patch.object(site_module, "build_icon_url", return_value="https://api.example.com/files/icon/file-preview"),
     ):

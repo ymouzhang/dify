@@ -1,5 +1,7 @@
 """Unit tests for DatasetService and dataset-related collaborators."""
 
+from collections.abc import Callable
+
 from sqlalchemy.orm import Session
 
 from models.dataset import DatasetPermission
@@ -216,6 +218,10 @@ class TestDatasetServiceRetrieval:
 
 
 class TestDatasetServiceRetrievalPermissions:
+    @pytest.fixture(autouse=True)
+    def _rbac_enabled(self, config_overrides: Callable[..., None]) -> None:
+        config_overrides(RBAC_ENABLED=True)
+
     """Unit tests for dataset list permission branching."""
 
     def test_get_datasets_filters_by_maintainer_and_rbac_overrides(self):
@@ -226,7 +232,6 @@ class TestDatasetServiceRetrievalPermissions:
 
         with (
             patch("services.dataset_service.paginate_query") as mock_paginate,
-            patch("services.dataset_service.dify_config.RBAC_ENABLED", True),
             patch(
                 "services.dataset_service.enterprise_rbac_service.RBACService.MyPermissions.get",
                 return_value=SimpleNamespace(workspace=SimpleNamespace(permission_keys=[])),
@@ -257,7 +262,6 @@ class TestDatasetServiceRetrievalPermissions:
 
         with (
             patch("services.dataset_service.paginate_query") as mock_paginate,
-            patch("services.dataset_service.dify_config.RBAC_ENABLED", True),
             patch(
                 "services.dataset_service.enterprise_rbac_service.RBACService.MyPermissions.get",
                 return_value=SimpleNamespace(workspace=SimpleNamespace(permission_keys=[])),
@@ -284,7 +288,6 @@ class TestDatasetServiceRetrievalPermissions:
 
         with (
             patch("services.dataset_service.paginate_query") as mock_paginate,
-            patch("services.dataset_service.dify_config.RBAC_ENABLED", True),
         ):
             mock_paginate.return_value = SimpleNamespace(items=[], total=0)
             DatasetService.get_datasets_by_ids(
@@ -314,7 +317,6 @@ class TestDatasetServiceRetrievalPermissions:
 
         with (
             patch("services.dataset_service.paginate_query") as mock_paginate,
-            patch("services.dataset_service.dify_config.RBAC_ENABLED", True),
             patch(
                 "services.dataset_service.enterprise_rbac_service.RBACService.MyPermissions.get",
                 return_value=mock_permissions,
@@ -341,7 +343,6 @@ class TestDatasetServiceRetrievalPermissions:
 
         with (
             patch("services.dataset_service.paginate_query") as mock_paginate,
-            patch("services.dataset_service.dify_config.RBAC_ENABLED", True),
         ):
             mock_paginate.return_value = SimpleNamespace(items=[], total=0)
             DatasetService.get_datasets(page=1, per_page=20, session=session, tenant_id="tenant-1", user=None)
@@ -351,7 +352,8 @@ class TestDatasetServiceRetrievalPermissions:
         select_stmt = mock_paginate.call_args.args[0]
         assert len(select_stmt._where_criteria) == 2
 
-    def test_get_datasets_legacy_owner_include_all_keeps_full_access(self):
+    def test_get_datasets_legacy_owner_include_all_keeps_full_access(self, config_overrides: Callable[..., None]):
+        config_overrides(RBAC_ENABLED=False)
         session = MagicMock()
         session.scalars.return_value.all.return_value = []
 
@@ -359,7 +361,6 @@ class TestDatasetServiceRetrievalPermissions:
 
         with (
             patch("services.dataset_service.paginate_query") as mock_paginate,
-            patch("services.dataset_service.dify_config.RBAC_ENABLED", False),
         ):
             mock_paginate.return_value = SimpleNamespace(items=[], total=0)
             DatasetService.get_datasets(
