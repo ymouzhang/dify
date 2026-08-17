@@ -359,16 +359,18 @@ class TestOpsTraceEndpoints:
             lambda **_kwargs: {"error": True},
         )
 
-        with app.test_request_context(
-            "/",
-            json={"tracing_provider": "langfuse", "tracing_config": {"api_key": "k"}},
+        with (
+            app.test_request_context(
+                "/",
+                json={"tracing_provider": "langfuse", "tracing_config": {"api_key": "k"}},
+            ),
+            pytest.raises(BadRequest),
         ):
-            with pytest.raises(BadRequest):
-                method(
-                    api,
-                    TraceConfigPayload(tracing_provider="langfuse", tracing_config={"api_key": "k"}),
-                    MagicMock(id="app-1"),
-                )
+            method(
+                api,
+                TraceConfigPayload(tracing_provider="langfuse", tracing_config={"api_key": "k"}),
+                MagicMock(id="app-1"),
+            )
 
     def test_trace_app_config_delete_not_found(self, app: Flask, monkeypatch: pytest.MonkeyPatch):
         api = ops_trace_module.TraceAppConfigApi()
@@ -380,9 +382,8 @@ class TestOpsTraceEndpoints:
             lambda **_kwargs: False,
         )
 
-        with app.test_request_context("/?tracing_provider=langfuse"):
-            with pytest.raises(BadRequest):
-                method(api, TraceProviderQuery(tracing_provider="langfuse"), MagicMock(id="app-1"))
+        with app.test_request_context("/?tracing_provider=langfuse"), pytest.raises(BadRequest):
+            method(api, TraceProviderQuery(tracing_provider="langfuse"), MagicMock(id="app-1"))
 
 
 class TestSiteEndpoints:

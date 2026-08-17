@@ -194,20 +194,24 @@ class TestDocumentServiceMutations:
     def test_rename_document_raises_when_dataset_is_missing(self, rename_account_context):
         session = MagicMock()
 
-        with patch.object(DatasetService, "get_dataset", return_value=None):
-            with pytest.raises(ValueError, match="Dataset not found"):
-                DocumentService.rename_document("dataset-1", "doc-1", "New Name", session)
+        with (
+            patch.object(DatasetService, "get_dataset", return_value=None),
+            pytest.raises(ValueError, match="Dataset not found"),
+        ):
+            DocumentService.rename_document("dataset-1", "doc-1", "New Name", session)
 
     def test_rename_document_raises_when_document_is_missing(self, rename_account_context):
         dataset = DatasetServiceUnitDataFactory.create_dataset_mock()
         session = MagicMock()
 
         with (
-            patch.object(DatasetService, "get_dataset", return_value=dataset),
-            patch.object(DocumentService, "get_document", return_value=None),
+            (
+                patch.object(DatasetService, "get_dataset", return_value=dataset),
+                patch.object(DocumentService, "get_document", return_value=None),
+            ),
+            pytest.raises(ValueError, match="Document not found"),
         ):
-            with pytest.raises(ValueError, match="Document not found"):
-                DocumentService.rename_document(dataset.id, "doc-1", "New Name", session)
+            DocumentService.rename_document(dataset.id, "doc-1", "New Name", session)
 
     def test_rename_document_rejects_cross_tenant_access(self, rename_account_context):
         dataset = DatasetServiceUnitDataFactory.create_dataset_mock()
@@ -215,11 +219,13 @@ class TestDocumentServiceMutations:
         session = MagicMock()
 
         with (
-            patch.object(DatasetService, "get_dataset", return_value=dataset),
-            patch.object(DocumentService, "get_document", return_value=document),
+            (
+                patch.object(DatasetService, "get_dataset", return_value=dataset),
+                patch.object(DocumentService, "get_document", return_value=document),
+            ),
+            pytest.raises(ValueError, match="No permission"),
         ):
-            with pytest.raises(ValueError, match="No permission"):
-                DocumentService.rename_document(dataset.id, document.id, "New Name", session)
+            DocumentService.rename_document(dataset.id, document.id, "New Name", session)
 
     def test_rename_document_updates_document_metadata_and_upload_file_name(self, rename_account_context):
         session = MagicMock()
@@ -281,13 +287,13 @@ class TestDocumentServiceMutations:
         with (
             patch("services.dataset_service.redis_client", retry_flags),
             patch("services.dataset_service.retry_document_indexing_task") as retry_task,
+            pytest.raises(ValueError, match="being retried"),
         ):
-            with pytest.raises(ValueError, match="being retried"):
-                DocumentService.retry_document(
-                    "dataset-1",
-                    [first_document, second_document],
-                    session,
-                )
+            DocumentService.retry_document(
+                "dataset-1",
+                [first_document, second_document],
+                session,
+            )
 
         assert first_document.indexing_status == "error"
         assert second_document.indexing_status == "error"
@@ -307,9 +313,11 @@ class TestDocumentServiceMutations:
             DatasetServiceUnitDataFactory.create_document_mock(document_id="doc-2", indexing_status="error"),
         ]
 
-        with patch("services.dataset_service.redis_client", retry_flags):
-            with pytest.raises(ValueError, match="being retried"):
-                DocumentService.retry_document("dataset-1", documents, MagicMock())
+        with (
+            patch("services.dataset_service.redis_client", retry_flags),
+            pytest.raises(ValueError, match="being retried"),
+        ):
+            DocumentService.retry_document("dataset-1", documents, MagicMock())
 
         assert retry_flags.values[first_retry_key] == "new-owner"
         assert retry_flags.values[second_retry_key] == "other-request"
@@ -323,9 +331,9 @@ class TestDocumentServiceMutations:
         with (
             patch("services.dataset_service.redis_client", retry_flags),
             patch("services.dataset_service.retry_document_indexing_task") as retry_task,
+            pytest.raises(RuntimeError, match="database unavailable"),
         ):
-            with pytest.raises(RuntimeError, match="database unavailable"):
-                DocumentService.retry_document("dataset-1", [document], session)
+            DocumentService.retry_document("dataset-1", [document], session)
 
         assert retry_flags.values == {}
         session.rollback.assert_called_once_with()
@@ -560,14 +568,14 @@ class TestDocumentServiceUpdateDocumentWithDatasetId:
         with (
             patch.object(DocumentService, "get_document", return_value=None),
             patch.object(DatasetService, "check_dataset_model_setting") as check_model_setting,
+            pytest.raises(NotFound, match="Document not found"),
         ):
-            with pytest.raises(NotFound, match="Document not found"):
-                DocumentService.update_document_with_dataset_id(
-                    dataset,
-                    document_data,
-                    account_context,
-                    session=session,
-                )
+            DocumentService.update_document_with_dataset_id(
+                dataset,
+                document_data,
+                account_context,
+                session=session,
+            )
 
         check_model_setting.assert_called_once_with(dataset)
 
@@ -589,14 +597,14 @@ class TestDocumentServiceUpdateDocumentWithDatasetId:
         with (
             patch.object(DocumentService, "get_document", return_value=document),
             patch.object(DatasetService, "check_dataset_model_setting"),
+            pytest.raises(ValueError, match="Document is not available"),
         ):
-            with pytest.raises(ValueError, match="Document is not available"):
-                DocumentService.update_document_with_dataset_id(
-                    dataset,
-                    document_data,
-                    account_context,
-                    session=session,
-                )
+            DocumentService.update_document_with_dataset_id(
+                dataset,
+                document_data,
+                account_context,
+                session=session,
+            )
 
     def test_update_document_with_dataset_id_upload_file_process_rule_and_name_override(self, account_context):
         session = MagicMock()

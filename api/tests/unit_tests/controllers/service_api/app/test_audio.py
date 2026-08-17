@@ -227,9 +227,11 @@ class TestAudioApi:
         app_model = SimpleNamespace(id="a1")
         end_user = SimpleNamespace(id="u1")
 
-        with app.test_request_context("/audio-to-text", method="POST", data={"file": _file_data()}):
-            with pytest.raises(expected):
-                handler(api, app_model=app_model, end_user=end_user)
+        with (
+            app.test_request_context("/audio-to-text", method="POST", data={"file": _file_data()}),
+            pytest.raises(expected),
+        ):
+            handler(api, app_model=app_model, end_user=end_user)
 
     def test_unhandled_error(self, app: Flask, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(
@@ -240,9 +242,11 @@ class TestAudioApi:
         app_model = SimpleNamespace(id="a1")
         end_user = SimpleNamespace(id="u1")
 
-        with app.test_request_context("/audio-to-text", method="POST", data={"file": _file_data()}):
-            with pytest.raises(InternalServerError):
-                handler(api, app_model=app_model, end_user=end_user)
+        with (
+            app.test_request_context("/audio-to-text", method="POST", data={"file": _file_data()}),
+            pytest.raises(InternalServerError),
+        ):
+            handler(api, app_model=app_model, end_user=end_user)
 
 
 class TestTextApi:
@@ -297,6 +301,8 @@ class TestTextApi:
         app_model = SimpleNamespace(id="a1")
         end_user = SimpleNamespace(id="end-user-1", external_user_id="ext")
 
-        with app.test_request_context("/text-to-audio", method="POST", json={"text": "hello"}):
-            with pytest.raises(ProviderQuotaExceededError):
-                handler(api, app_model=app_model, end_user=end_user)
+        with (
+            app.test_request_context("/text-to-audio", method="POST", json={"text": "hello"}),
+            pytest.raises(ProviderQuotaExceededError),
+        ):
+            handler(api, app_model=app_model, end_user=end_user)

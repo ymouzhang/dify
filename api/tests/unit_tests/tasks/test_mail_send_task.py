@@ -56,9 +56,11 @@ class TestEmailTemplateRendering:
         substitutions = {"name": "Alice", "code": "654321"}
 
         # Act
-        with patch.object(dify_config, "MAIL_TEMPLATING_MODE", TemplateMode.SANDBOX):
-            with patch.object(dify_config, "MAIL_TEMPLATING_TIMEOUT", 3):
-                result = _render_template_with_strategy(body, substitutions)
+        with (
+            patch.object(dify_config, "MAIL_TEMPLATING_MODE", TemplateMode.SANDBOX),
+            patch.object(dify_config, "MAIL_TEMPLATING_TIMEOUT", 3),
+        ):
+            result = _render_template_with_strategy(body, substitutions)
 
         # Assert
         assert result == "Hello Alice, your code is 654321"
@@ -83,11 +85,13 @@ class TestEmailTemplateRendering:
         substitutions: dict[str, str] = {}
 
         # Act & Assert - sandbox blocks ranges larger than MAX_RANGE (100000)
-        with patch.object(dify_config, "MAIL_TEMPLATING_MODE", TemplateMode.SANDBOX):
-            with patch.object(dify_config, "MAIL_TEMPLATING_TIMEOUT", 1):
-                # Should raise OverflowError for range too big
-                with pytest.raises((TimeoutError, RuntimeError, OverflowError)):
-                    _render_template_with_strategy(body, substitutions)
+        # Should raise OverflowError for range too big
+        with (
+            patch.object(dify_config, "MAIL_TEMPLATING_MODE", TemplateMode.SANDBOX),
+            patch.object(dify_config, "MAIL_TEMPLATING_TIMEOUT", 1),
+            pytest.raises((TimeoutError, RuntimeError, OverflowError)),
+        ):
+            _render_template_with_strategy(body, substitutions)
 
     def test_render_template_invalid_mode(self):
         """Test that invalid template mode raises ValueError."""
@@ -96,9 +100,11 @@ class TestEmailTemplateRendering:
         substitutions: dict[str, str] = {}
 
         # Act & Assert
-        with patch.object(dify_config, "MAIL_TEMPLATING_MODE", "invalid_mode"):
-            with pytest.raises(ValueError, match="Unsupported mail templating mode"):
-                _render_template_with_strategy(body, substitutions)
+        with (
+            patch.object(dify_config, "MAIL_TEMPLATING_MODE", "invalid_mode"),
+            pytest.raises(ValueError, match="Unsupported mail templating mode"),
+        ):
+            _render_template_with_strategy(body, substitutions)
 
     def test_render_template_with_special_characters(self):
         """Test template rendering with special characters and HTML."""

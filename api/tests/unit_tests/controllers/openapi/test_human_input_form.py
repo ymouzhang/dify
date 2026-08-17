@@ -89,14 +89,16 @@ class TestOpenApiHumanInputFormGet:
         app_model = SimpleNamespace(id="app-1", tenant_id="tenant-1")
         caller = SimpleNamespace(id="acct-1")
 
-        with app.test_request_context("/openapi/v1/apps/app-1/human-input-forms/bad"):
-            with pytest.raises(HumanInputFormNotFound):
-                api.get.__wrapped__(
-                    api,
-                    app_id="app-1",
-                    form_token="bad",
-                    auth_data=_make_auth_data(app_model, caller, "account"),
-                )
+        with (
+            app.test_request_context("/openapi/v1/apps/app-1/human-input-forms/bad"),
+            pytest.raises(HumanInputFormNotFound),
+        ):
+            api.get.__wrapped__(
+                api,
+                app_id="app-1",
+                form_token="bad",
+                auth_data=_make_auth_data(app_model, caller, "account"),
+            )
 
     def test_get_form_wrong_app(self, app: Flask, bypass_pipeline, monkeypatch: pytest.MonkeyPatch):
         from controllers.openapi.human_input_form import OpenApiWorkflowHumanInputFormApi
@@ -117,14 +119,16 @@ class TestOpenApiHumanInputFormGet:
         app_model = SimpleNamespace(id="app-1", tenant_id="tenant-1")
         caller = SimpleNamespace(id="acct-1")
 
-        with app.test_request_context("/openapi/v1/apps/app-1/human-input-forms/tok-1"):
-            with pytest.raises(HumanInputFormNotFound):
-                api.get.__wrapped__(
-                    api,
-                    app_id="app-1",
-                    form_token="tok-1",
-                    auth_data=_make_auth_data(app_model, caller, "account"),
-                )
+        with (
+            app.test_request_context("/openapi/v1/apps/app-1/human-input-forms/tok-1"),
+            pytest.raises(HumanInputFormNotFound),
+        ):
+            api.get.__wrapped__(
+                api,
+                app_id="app-1",
+                form_token="tok-1",
+                auth_data=_make_auth_data(app_model, caller, "account"),
+            )
 
     def test_get_form_wrong_surface(self, app: Flask, bypass_pipeline, monkeypatch: pytest.MonkeyPatch):
         from controllers.openapi.human_input_form import OpenApiWorkflowHumanInputFormApi
@@ -145,14 +149,16 @@ class TestOpenApiHumanInputFormGet:
         app_model = SimpleNamespace(id="app-1", tenant_id="tenant-1")
         caller = SimpleNamespace(id="acct-1")
 
-        with app.test_request_context("/openapi/v1/apps/app-1/human-input-forms/tok-1"):
-            with pytest.raises(RecipientSurfaceMismatch):
-                api.get.__wrapped__(
-                    api,
-                    app_id="app-1",
-                    form_token="tok-1",
-                    auth_data=_make_auth_data(app_model, caller, "account"),
-                )
+        with (
+            app.test_request_context("/openapi/v1/apps/app-1/human-input-forms/tok-1"),
+            pytest.raises(RecipientSurfaceMismatch),
+        ):
+            api.get.__wrapped__(
+                api,
+                app_id="app-1",
+                form_token="tok-1",
+                auth_data=_make_auth_data(app_model, caller, "account"),
+            )
 
 
 class TestOpenApiHumanInputFormPost:
@@ -278,15 +284,17 @@ class TestOpenApiHumanInputFormPost:
         app_model = SimpleNamespace(id="app-1", tenant_id="tenant-1")
         caller = SimpleNamespace(id="acct-42")
 
-        with app.test_request_context(
-            "/openapi/v1/apps/app-1/human-input-forms/tok-1:submit",
-            method="POST",
-            json={"inputs": {"field1": "val"}},  # missing required "action"
+        with (
+            app.test_request_context(
+                "/openapi/v1/apps/app-1/human-input-forms/tok-1:submit",
+                method="POST",
+                json={"inputs": {"field1": "val"}},  # missing required "action"
+            ),
+            pytest.raises(UnprocessableEntity),
         ):
-            with pytest.raises(UnprocessableEntity):
-                api.post.__wrapped__(
-                    api,
-                    app_id="app-1",
-                    form_token="tok-1",
-                    auth_data=_make_auth_data(app_model, caller, "account"),
-                )
+            api.post.__wrapped__(
+                api,
+                app_id="app-1",
+                form_token="tok-1",
+                auth_data=_make_auth_data(app_model, caller, "account"),
+            )

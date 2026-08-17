@@ -53,9 +53,8 @@ class TestAppParameterApi:
         app_definitions.get_public_parameters.side_effect = service_error
         application_services.return_value = SimpleNamespace(app_definitions=app_definitions)
 
-        with app.test_request_context("/parameters"):
-            with pytest.raises(http_error):
-                AppParameterApi().get(SimpleNamespace(id="app-1"), SimpleNamespace())
+        with app.test_request_context("/parameters"), pytest.raises(http_error):
+            AppParameterApi().get(SimpleNamespace(id="app-1"), SimpleNamespace())
 
 
 # ---------------------------------------------------------------------------
@@ -81,9 +80,8 @@ class TestAppMeta:
         app_definitions.get_tool_icons.side_effect = AppDefinitionUnavailableError
         application_services.return_value = SimpleNamespace(app_definitions=app_definitions)
 
-        with app.test_request_context("/meta"):
-            with pytest.raises(AppUnavailableError) as raised:
-                AppMeta().get(SimpleNamespace(id="app-1"), SimpleNamespace())
+        with app.test_request_context("/meta"), pytest.raises(AppUnavailableError) as raised:
+            AppMeta().get(SimpleNamespace(id="app-1"), SimpleNamespace())
 
         assert raised.value.data == {
             "code": "app_unavailable",
@@ -139,9 +137,8 @@ class TestAppAccessMode:
     def test_raises_when_no_app_id_or_code(self, mock_features: MagicMock, app: Flask) -> None:
         mock_features.return_value = SimpleNamespace(webapp_auth=SimpleNamespace(enabled=True))
 
-        with app.test_request_context("/webapp/access-mode"):
-            with pytest.raises(ValueError, match="appId or appCode"):
-                AppAccessMode().get()
+        with app.test_request_context("/webapp/access-mode"), pytest.raises(ValueError, match="appId or appCode"):
+            AppAccessMode().get()
 
 
 # ---------------------------------------------------------------------------
@@ -156,6 +153,8 @@ class TestAppWebAuthPermission:
         assert result == {"result": True}
 
     def test_raises_when_missing_app_id(self, app: Flask) -> None:
-        with app.test_request_context("/webapp/permission", headers={"X-App-Code": "code1"}):
-            with pytest.raises(ValueError, match="appId"):
-                AppWebAuthPermission().get()
+        with (
+            app.test_request_context("/webapp/permission", headers={"X-App-Code": "code1"}),
+            pytest.raises(ValueError, match="appId"),
+        ):
+            AppWebAuthPermission().get()

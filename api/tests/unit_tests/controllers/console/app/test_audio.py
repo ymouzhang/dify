@@ -196,19 +196,21 @@ def test_agent_console_audio_api_checks_rbac_with_backing_app_id(app: Flask, mon
 
     api = AgentChatMessageAudioApi()
     handler = unwrap(api.post)
-    with app.test_request_context(
-        f"/console/api/agent/{agent_id}/audio-to-text",
-        method="POST",
-        data={"file": _file_data()},
+    with (
+        app.test_request_context(
+            f"/console/api/agent/{agent_id}/audio-to-text",
+            method="POST",
+            data={"file": _file_data()},
+        ),
+        pytest.raises(Forbidden),
     ):
-        with pytest.raises(Forbidden):
-            handler(
-                api,
-                session=SimpleNamespace(),
-                current_tenant_id="tenant-1",
-                current_user=SimpleNamespace(id="account-1"),
-                agent_id=agent_id,
-            )
+        handler(
+            api,
+            session=SimpleNamespace(),
+            current_tenant_id="tenant-1",
+            current_user=SimpleNamespace(id="account-1"),
+            agent_id=agent_id,
+        )
 
     assert soul_loaded is False
 
@@ -228,19 +230,21 @@ def test_agent_console_audio_api_preserves_missing_build_draft_404(app: Flask, m
 
     api = AgentChatMessageAudioApi()
     handler = unwrap(api.post)
-    with app.test_request_context(
-        f"/console/api/agent/{agent_id}/audio-to-text",
-        method="POST",
-        data={"file": _file_data(), "draft_type": "debug_build"},
+    with (
+        app.test_request_context(
+            f"/console/api/agent/{agent_id}/audio-to-text",
+            method="POST",
+            data={"file": _file_data(), "draft_type": "debug_build"},
+        ),
+        pytest.raises(AgentVersionNotFoundError),
     ):
-        with pytest.raises(AgentVersionNotFoundError):
-            handler(
-                api,
-                session=SimpleNamespace(),
-                current_tenant_id="tenant-1",
-                current_user=SimpleNamespace(id="account-1"),
-                agent_id=agent_id,
-            )
+        handler(
+            api,
+            session=SimpleNamespace(),
+            current_tenant_id="tenant-1",
+            current_user=SimpleNamespace(id="account-1"),
+            agent_id=agent_id,
+        )
 
 
 @pytest.mark.parametrize(
@@ -264,9 +268,11 @@ def test_console_audio_api_error_mapping(app: Flask, monkeypatch: pytest.MonkeyP
     handler = unwrap(api.post)
     app_model = SimpleNamespace(id="a1")
 
-    with app.test_request_context("/console/api/apps/app/audio-to-text", method="POST", data={"file": _file_data()}):
-        with pytest.raises(expected):
-            handler(api, app_model=app_model)
+    with (
+        app.test_request_context("/console/api/apps/app/audio-to-text", method="POST", data={"file": _file_data()}),
+        pytest.raises(expected),
+    ):
+        handler(api, app_model=app_model)
 
 
 def test_console_audio_api_unhandled_error(app: Flask, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -275,9 +281,11 @@ def test_console_audio_api_unhandled_error(app: Flask, monkeypatch: pytest.Monke
     handler = unwrap(api.post)
     app_model = SimpleNamespace(id="a1")
 
-    with app.test_request_context("/console/api/apps/app/audio-to-text", method="POST", data={"file": _file_data()}):
-        with pytest.raises(InternalServerError):
-            handler(api, app_model=app_model)
+    with (
+        app.test_request_context("/console/api/apps/app/audio-to-text", method="POST", data={"file": _file_data()}),
+        pytest.raises(InternalServerError),
+    ):
+        handler(api, app_model=app_model)
 
 
 def test_console_text_api_success(app: Flask, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -330,13 +338,15 @@ def test_console_text_api_error_mapping(app: Flask, monkeypatch: pytest.MonkeyPa
     handler = unwrap(api.post)
     app_model = SimpleNamespace(id="a1")
 
-    with app.test_request_context(
-        "/console/api/apps/app/text-to-audio",
-        method="POST",
-        json={"text": "hello"},
+    with (
+        app.test_request_context(
+            "/console/api/apps/app/text-to-audio",
+            method="POST",
+            json={"text": "hello"},
+        ),
+        pytest.raises(ProviderQuotaExceededError),
     ):
-        with pytest.raises(ProviderQuotaExceededError):
-            handler(api, TextToSpeechPayload(text="hello"), app_model=app_model)
+        handler(api, TextToSpeechPayload(text="hello"), app_model=app_model)
 
 
 def test_console_text_modes_success(app: Flask, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -364,9 +374,11 @@ def test_console_text_modes_language_error(app: Flask, monkeypatch: pytest.Monke
     handler = unwrap(api.get)
     app_model = SimpleNamespace(tenant_id="t1")
 
-    with app.test_request_context("/console/api/apps/app/text-to-audio/voices?language=en", method="GET"):
-        with pytest.raises(AppUnavailableError):
-            handler(api, TextToSpeechVoiceQuery(language="en-US"), app_model=app_model)
+    with (
+        app.test_request_context("/console/api/apps/app/text-to-audio/voices?language=en", method="GET"),
+        pytest.raises(AppUnavailableError),
+    ):
+        handler(api, TextToSpeechVoiceQuery(language="en-US"), app_model=app_model)
 
 
 def test_audio_to_text_success(app: Flask, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -403,14 +415,16 @@ def test_audio_to_text_maps_audio_too_large(app: Flask, monkeypatch: pytest.Monk
     app_model = SimpleNamespace(id="app-1")
 
     data = {"file": (io.BytesIO(b"x"), "sample.wav")}
-    with app.test_request_context(
-        "/console/api/apps/app-1/audio-to-text",
-        method="POST",
-        data=data,
-        content_type="multipart/form-data",
+    with (
+        app.test_request_context(
+            "/console/api/apps/app-1/audio-to-text",
+            method="POST",
+            data=data,
+            content_type="multipart/form-data",
+        ),
+        pytest.raises(AudioTooLargeError),
     ):
-        with pytest.raises(AudioTooLargeError):
-            method(api, app_model=app_model)
+        method(api, app_model=app_model)
 
 
 def test_text_to_audio_success(app: Flask, monkeypatch: pytest.MonkeyPatch) -> None:

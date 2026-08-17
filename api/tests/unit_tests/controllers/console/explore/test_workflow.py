@@ -61,15 +61,14 @@ class TestInstalledAppWorkflowRunApi:
         api = InstalledAppWorkflowRunApi()
         method = unwrap(api.post)
 
-        with app.test_request_context("/"):
-            with pytest.raises(NotWorkflowAppError):
-                method(
-                    api,
-                    WorkflowRunPayload.model_validate({"inputs": {}}),
-                    MagicMock(),
-                    MagicMock(),
-                    non_workflow_installed_app,
-                )
+        with app.test_request_context("/"), pytest.raises(NotWorkflowAppError):
+            method(
+                api,
+                WorkflowRunPayload.model_validate({"inputs": {}}),
+                MagicMock(),
+                MagicMock(),
+                non_workflow_installed_app,
+            )
 
     def test_success(self, app: Flask, installed_workflow_app, user, payload):
         api = InstalledAppWorkflowRunApi()
@@ -100,9 +99,9 @@ class TestInstalledAppWorkflowRunApi:
                 "controllers.console.explore.workflow.AppGenerateService.generate",
                 side_effect=InvokeRateLimitError("rate limit"),
             ),
+            pytest.raises(InvokeRateLimitHttpError),
         ):
-            with pytest.raises(InvokeRateLimitHttpError):
-                method(api, req_data, MagicMock(), user, installed_workflow_app)
+            method(api, req_data, MagicMock(), user, installed_workflow_app)
 
     def test_unexpected_exception(self, app: Flask, installed_workflow_app, user, payload):
         api = InstalledAppWorkflowRunApi()
@@ -115,9 +114,9 @@ class TestInstalledAppWorkflowRunApi:
                 "controllers.console.explore.workflow.AppGenerateService.generate",
                 side_effect=Exception("boom"),
             ),
+            pytest.raises(InternalServerError),
         ):
-            with pytest.raises(InternalServerError):
-                method(api, req_data, MagicMock(), user, installed_workflow_app)
+            method(api, req_data, MagicMock(), user, installed_workflow_app)
 
 
 class TestInstalledAppWorkflowTaskStopApi:

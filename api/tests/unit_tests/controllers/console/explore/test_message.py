@@ -121,9 +121,9 @@ class TestMessageListApi:
                 "pagination_by_first_id",
                 side_effect=ConversationNotExistsError(),
             ),
+            pytest.raises(NotFound),
         ):
-            with pytest.raises(NotFound):
-                method(MagicMock(), installed_app)
+            method(MagicMock(), installed_app)
 
     def test_first_message_not_exists(self, app: Flask):
         api = module.MessageListApi()
@@ -141,9 +141,9 @@ class TestMessageListApi:
                 "pagination_by_first_id",
                 side_effect=FirstMessageNotExistsError(),
             ),
+            pytest.raises(NotFound),
         ):
-            with pytest.raises(NotFound):
-                method(MagicMock(), installed_app)
+            method(MagicMock(), installed_app)
 
 
 class TestMessageFeedbackApi:
@@ -179,9 +179,9 @@ class TestMessageFeedbackApi:
                 "create_feedback",
                 side_effect=MessageNotExistsError(),
             ),
+            pytest.raises(NotFound),
         ):
-            with pytest.raises(NotFound):
-                method(module.MessageFeedbackPayload.model_validate({}), MagicMock(), installed_app, "mid")
+            method(module.MessageFeedbackPayload.model_validate({}), MagicMock(), installed_app, "mid")
 
 
 class TestMessageMoreLikeThisApi:
@@ -236,9 +236,9 @@ class TestMessageMoreLikeThisApi:
                 "generate_more_like_this",
                 side_effect=module.MoreLikeThisDisabledError(),
             ),
+            pytest.raises(AppMoreLikeThisDisabledError),
         ):
-            with pytest.raises(AppMoreLikeThisDisabledError):
-                method(MagicMock(), MagicMock(), installed_app, "mid")
+            method(MagicMock(), MagicMock(), installed_app, "mid")
 
     def test_message_not_exists_more_like_this(self, app: Flask):
         api = module.MessageMoreLikeThisApi()
@@ -256,9 +256,9 @@ class TestMessageMoreLikeThisApi:
                 "generate_more_like_this",
                 side_effect=MessageNotExistsError(),
             ),
+            pytest.raises(NotFound),
         ):
-            with pytest.raises(NotFound):
-                method(MagicMock(), MagicMock(), installed_app, "mid")
+            method(MagicMock(), MagicMock(), installed_app, "mid")
 
     def test_provider_not_init_more_like_this(self, app: Flask):
         api = module.MessageMoreLikeThisApi()
@@ -276,9 +276,9 @@ class TestMessageMoreLikeThisApi:
                 "generate_more_like_this",
                 side_effect=ProviderTokenNotInitError("test"),
             ),
+            pytest.raises(ProviderNotInitializeError),
         ):
-            with pytest.raises(ProviderNotInitializeError):
-                method(MagicMock(), MagicMock(), installed_app, "mid")
+            method(MagicMock(), MagicMock(), installed_app, "mid")
 
     def test_quota_exceeded_more_like_this(self, app: Flask):
         api = module.MessageMoreLikeThisApi()
@@ -296,9 +296,9 @@ class TestMessageMoreLikeThisApi:
                 "generate_more_like_this",
                 side_effect=QuotaExceededError(),
             ),
+            pytest.raises(ProviderQuotaExceededError),
         ):
-            with pytest.raises(ProviderQuotaExceededError):
-                method(MagicMock(), MagicMock(), installed_app, "mid")
+            method(MagicMock(), MagicMock(), installed_app, "mid")
 
     def test_model_not_support_more_like_this(self, app: Flask):
         api = module.MessageMoreLikeThisApi()
@@ -316,9 +316,9 @@ class TestMessageMoreLikeThisApi:
                 "generate_more_like_this",
                 side_effect=ModelCurrentlyNotSupportError(),
             ),
+            pytest.raises(ProviderModelCurrentlyNotSupportError),
         ):
-            with pytest.raises(ProviderModelCurrentlyNotSupportError):
-                method(MagicMock(), MagicMock(), installed_app, "mid")
+            method(MagicMock(), MagicMock(), installed_app, "mid")
 
     def test_invoke_error_more_like_this(self, app: Flask):
         api = module.MessageMoreLikeThisApi()
@@ -336,9 +336,9 @@ class TestMessageMoreLikeThisApi:
                 "generate_more_like_this",
                 side_effect=InvokeError("test error"),
             ),
+            pytest.raises(CompletionRequestError),
         ):
-            with pytest.raises(CompletionRequestError):
-                method(MagicMock(), MagicMock(), installed_app, "mid")
+            method(MagicMock(), MagicMock(), installed_app, "mid")
 
     def test_unexpected_error_more_like_this(self, app: Flask):
         api = module.MessageMoreLikeThisApi()
@@ -356,9 +356,9 @@ class TestMessageMoreLikeThisApi:
                 "generate_more_like_this",
                 side_effect=Exception("unexpected"),
             ),
+            pytest.raises(InternalServerError),
         ):
-            with pytest.raises(InternalServerError):
-                method(MagicMock(), MagicMock(), installed_app, "mid")
+            method(MagicMock(), MagicMock(), installed_app, "mid")
 
 
 class TestMessageSuggestedQuestionApi:
@@ -400,9 +400,9 @@ class TestMessageSuggestedQuestionApi:
                 "get_suggested_questions_after_answer",
                 side_effect=SuggestedQuestionsAfterAnswerDisabledError(),
             ),
+            pytest.raises(AppSuggestedQuestionsAfterAnswerDisabledError),
         ):
-            with pytest.raises(AppSuggestedQuestionsAfterAnswerDisabledError):
-                method(MagicMock(), installed_app, "mid")
+            method(MagicMock(), installed_app, "mid")
 
     def test_message_not_exists_suggested_question(self):
         api = module.MessageSuggestedQuestionApi()
@@ -416,9 +416,9 @@ class TestMessageSuggestedQuestionApi:
                 "get_suggested_questions_after_answer",
                 side_effect=MessageNotExistsError(),
             ),
+            pytest.raises(NotFound),
         ):
-            with pytest.raises(NotFound):
-                method(MagicMock(), installed_app, "mid")
+            method(MagicMock(), installed_app, "mid")
 
     def test_conversation_not_exists_suggested_question(self):
         api = module.MessageSuggestedQuestionApi()
@@ -432,9 +432,9 @@ class TestMessageSuggestedQuestionApi:
                 "get_suggested_questions_after_answer",
                 side_effect=ConversationNotExistsError(),
             ),
+            pytest.raises(NotFound),
         ):
-            with pytest.raises(NotFound):
-                method(MagicMock(), installed_app, "mid")
+            method(MagicMock(), installed_app, "mid")
 
     def test_provider_not_init_suggested_question(self):
         api = module.MessageSuggestedQuestionApi()
@@ -448,9 +448,9 @@ class TestMessageSuggestedQuestionApi:
                 "get_suggested_questions_after_answer",
                 side_effect=ProviderTokenNotInitError("test"),
             ),
+            pytest.raises(ProviderNotInitializeError),
         ):
-            with pytest.raises(ProviderNotInitializeError):
-                method(MagicMock(), installed_app, "mid")
+            method(MagicMock(), installed_app, "mid")
 
     def test_quota_exceeded_suggested_question(self):
         api = module.MessageSuggestedQuestionApi()
@@ -464,9 +464,9 @@ class TestMessageSuggestedQuestionApi:
                 "get_suggested_questions_after_answer",
                 side_effect=QuotaExceededError(),
             ),
+            pytest.raises(ProviderQuotaExceededError),
         ):
-            with pytest.raises(ProviderQuotaExceededError):
-                method(MagicMock(), installed_app, "mid")
+            method(MagicMock(), installed_app, "mid")
 
     def test_model_not_support_suggested_question(self):
         api = module.MessageSuggestedQuestionApi()
@@ -480,9 +480,9 @@ class TestMessageSuggestedQuestionApi:
                 "get_suggested_questions_after_answer",
                 side_effect=ModelCurrentlyNotSupportError(),
             ),
+            pytest.raises(ProviderModelCurrentlyNotSupportError),
         ):
-            with pytest.raises(ProviderModelCurrentlyNotSupportError):
-                method(MagicMock(), installed_app, "mid")
+            method(MagicMock(), installed_app, "mid")
 
     def test_invoke_error_suggested_question(self):
         api = module.MessageSuggestedQuestionApi()
@@ -496,9 +496,9 @@ class TestMessageSuggestedQuestionApi:
                 "get_suggested_questions_after_answer",
                 side_effect=InvokeError("test error"),
             ),
+            pytest.raises(CompletionRequestError),
         ):
-            with pytest.raises(CompletionRequestError):
-                method(MagicMock(), installed_app, "mid")
+            method(MagicMock(), installed_app, "mid")
 
     def test_unexpected_error_suggested_question(self):
         api = module.MessageSuggestedQuestionApi()
@@ -512,6 +512,6 @@ class TestMessageSuggestedQuestionApi:
                 "get_suggested_questions_after_answer",
                 side_effect=Exception("unexpected"),
             ),
+            pytest.raises(InternalServerError),
         ):
-            with pytest.raises(InternalServerError):
-                method(MagicMock(), installed_app, "mid")
+            method(MagicMock(), installed_app, "mid")

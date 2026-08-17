@@ -145,9 +145,8 @@ class TestAccountInitApi:
 
         account = make_account()
 
-        with app.test_request_context("/account/init"):
-            with pytest.raises(AccountAlreadyInitedError):
-                method(api, account)
+        with app.test_request_context("/account/init"), pytest.raises(AccountAlreadyInitedError):
+            method(api, account)
 
 
 class TestAccountProfileApi:
@@ -256,9 +255,9 @@ class TestAccountAvatarApiGet:
                 "controllers.console.workspace.account.file_helpers.get_signed_file_url",
                 return_value="https://signed/example",
             ) as sign_mock,
+            pytest.raises(NotFound),
         ):
-            with pytest.raises(NotFound):
-                method(api, AccountAvatarQuery(avatar=file_id), user)
+            method(api, AccountAvatarQuery(avatar=file_id), user)
 
         sign_mock.assert_not_called()
 
@@ -354,9 +353,9 @@ class TestAccountPasswordApi:
                 "controllers.console.workspace.account.AccountService.update_account_password",
                 side_effect=ServicePwdError(),
             ),
+            pytest.raises(CurrentPasswordIncorrectError),
         ):
-            with pytest.raises(CurrentPasswordIncorrectError):
-                method(api, user)
+            method(api, user)
 
 
 class TestAccountIntegrateApi:
@@ -428,9 +427,9 @@ class TestAccountDeleteApi:
                 "controllers.console.workspace.account.AccountService.verify_account_deletion_code",
                 return_value=False,
             ),
+            pytest.raises(InvalidAccountDeletionCodeError),
         ):
-            with pytest.raises(InvalidAccountDeletionCodeError):
-                method(api, user)
+            method(api, user)
 
 
 class TestChangeEmailApis:
@@ -461,9 +460,9 @@ class TestChangeEmailApis:
                     is_bound_to_account=MagicMock(return_value=True),
                 ),
             ),
+            pytest.raises(EmailCodeError),
         ):
-            with pytest.raises(EmailCodeError):
-                method(api, user)
+            method(api, user)
 
     def test_reset_email_already_used(self, app: Flask):
         api = ChangeEmailResetApi()
@@ -482,9 +481,9 @@ class TestChangeEmailApis:
             ),
             patch("controllers.console.workspace.account.AccountService.is_account_in_freeze", return_value=False),
             patch("controllers.console.workspace.account.AccountService.check_email_unique", return_value=False),
+            pytest.raises(EmailAlreadyInUseError),
         ):
-            with pytest.raises(EmailAlreadyInUseError):
-                method(api, user)
+            method(api, user)
 
 
 class TestCheckEmailUniqueApi:
@@ -524,6 +523,6 @@ class TestCheckEmailUniqueApi:
                 return_value=payload,
             ),
             patch("controllers.console.workspace.account.AccountService.is_account_in_freeze", return_value=True),
+            pytest.raises(AccountInFreezeError),
         ):
-            with pytest.raises(AccountInFreezeError):
-                method(api)
+            method(api)

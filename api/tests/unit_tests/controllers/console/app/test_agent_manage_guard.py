@@ -77,9 +77,9 @@ class TestAgentManageRequiredForAgentApp:
             patches[1],
             patches[2],
             patch("controllers.console.app.wraps.enforce_rbac_access", side_effect=Forbidden()),
+            pytest.raises(Forbidden),
         ):
-            with pytest.raises(Forbidden):
-                view(app_id="app-1")
+            view(app_id="app-1")
 
         assert calls == []
 
@@ -99,9 +99,8 @@ class TestAgentManageRequiredForAgentApp:
         binding = SimpleNamespace(scope=AgentScope.WORKFLOW_ONLY)
         patches = _patch_guard(_app_with_binding(binding), rbac_enabled=False)
 
-        with patches[0], patches[1], patches[2]:
-            with pytest.raises(AppNotFoundError):
-                view(app_id="app-1")
+        with patches[0], patches[1], patches[2], pytest.raises(AppNotFoundError):
+            view(app_id="app-1")
 
         assert calls == []
 
@@ -110,9 +109,14 @@ class TestAgentManageRequiredForAgentApp:
         binding = SimpleNamespace(scope=AgentScope.WORKFLOW_ONLY)
         patches = _patch_guard(_app_with_binding(binding), rbac_enabled=True)
 
-        with patches[0], patches[1], patches[2], patch("controllers.console.app.wraps.enforce_rbac_access") as gate:
-            with pytest.raises(AppNotFoundError):
-                view(app_id="app-1")
+        with (
+            patches[0],
+            patches[1],
+            patches[2],
+            patch("controllers.console.app.wraps.enforce_rbac_access") as gate,
+            pytest.raises(AppNotFoundError),
+        ):
+            view(app_id="app-1")
 
         gate.assert_not_called()
         assert calls == []

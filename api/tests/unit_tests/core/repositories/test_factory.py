@@ -129,16 +129,18 @@ class TestRepositoryFactory:
         mock_repository_class.side_effect = Exception("Instantiation failed")
 
         # Mock import_string to return a failing class
-        with patch("core.repositories.factory.import_string", return_value=mock_repository_class, autospec=True):
-            with pytest.raises(RepositoryImportError) as exc_info:
-                DifyCoreRepositoryFactory.create_workflow_execution_repository(
-                    session_factory=sqlite_session_factory,
-                    tenant_id=RESOURCE_TENANT_ID,
-                    user=mock_user,
-                    app_id="test-app-id",
-                    triggered_from=WorkflowRunTriggeredFrom.APP_RUN,
-                )
-            assert "Failed to create WorkflowExecutionRepository" in str(exc_info.value)
+        with (
+            patch("core.repositories.factory.import_string", return_value=mock_repository_class, autospec=True),
+            pytest.raises(RepositoryImportError) as exc_info,
+        ):
+            DifyCoreRepositoryFactory.create_workflow_execution_repository(
+                session_factory=sqlite_session_factory,
+                tenant_id=RESOURCE_TENANT_ID,
+                user=mock_user,
+                app_id="test-app-id",
+                triggered_from=WorkflowRunTriggeredFrom.APP_RUN,
+            )
+        assert "Failed to create WorkflowExecutionRepository" in str(exc_info.value)
 
     @patch("core.repositories.factory.dify_config")
     def test_create_workflow_node_execution_repository_success(self, mock_config, sqlite_session_factory):
@@ -207,16 +209,18 @@ class TestRepositoryFactory:
         mock_repository_class.side_effect = Exception("Instantiation failed")
 
         # Mock import_string to return a failing class
-        with patch("core.repositories.factory.import_string", return_value=mock_repository_class, autospec=True):
-            with pytest.raises(RepositoryImportError) as exc_info:
-                DifyCoreRepositoryFactory.create_workflow_node_execution_repository(
-                    session_factory=sqlite_session_factory,
-                    tenant_id=RESOURCE_TENANT_ID,
-                    user=mock_user,
-                    app_id="test-app-id",
-                    triggered_from=WorkflowNodeExecutionTriggeredFrom.SINGLE_STEP,
-                )
-            assert "Failed to create WorkflowNodeExecutionRepository" in str(exc_info.value)
+        with (
+            patch("core.repositories.factory.import_string", return_value=mock_repository_class, autospec=True),
+            pytest.raises(RepositoryImportError) as exc_info,
+        ):
+            DifyCoreRepositoryFactory.create_workflow_node_execution_repository(
+                session_factory=sqlite_session_factory,
+                tenant_id=RESOURCE_TENANT_ID,
+                user=mock_user,
+                app_id="test-app-id",
+                triggered_from=WorkflowNodeExecutionTriggeredFrom.SINGLE_STEP,
+            )
+        assert "Failed to create WorkflowNodeExecutionRepository" in str(exc_info.value)
 
     def test_repository_import_error_exception(self):
         """Test RepositoryImportError exception handling."""

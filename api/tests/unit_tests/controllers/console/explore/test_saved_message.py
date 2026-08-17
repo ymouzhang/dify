@@ -122,9 +122,9 @@ class TestSavedMessageListApi:
                 "save",
                 side_effect=MessageNotExistsError(),
             ),
+            pytest.raises(NotFound),
         ):
-            with pytest.raises(NotFound):
-                method(api, module.SavedMessageCreatePayload.model_validate(payload), MagicMock(), installed_app)
+            method(api, module.SavedMessageCreatePayload.model_validate(payload), MagicMock(), installed_app)
 
 
 class TestSavedMessageApi:

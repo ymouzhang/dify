@@ -37,10 +37,12 @@ def _end_user(user_id: str) -> EndUser:
 
 def test_manifest_parses_query_and_returns_items():
     raw = _raw(AgentDriveManifestApi.get)
-    with app.test_request_context("/?tenant_id=tenant-1&prefix=docs/&include_download_url=true"):
-        with patch(f"{_MOD}.AgentDriveService") as svc:
-            svc.return_value.manifest.return_value = [{"key": "docs/a.txt"}]
-            result = raw(AgentDriveManifestApi(), "agent-agent-1")
+    with (
+        app.test_request_context("/?tenant_id=tenant-1&prefix=docs/&include_download_url=true"),
+        patch(f"{_MOD}.AgentDriveService") as svc,
+    ):
+        svc.return_value.manifest.return_value = [{"key": "docs/a.txt"}]
+        result = raw(AgentDriveManifestApi(), "agent-agent-1")
     assert result == {"items": [{"key": "docs/a.txt"}]}
     svc.return_value.manifest.assert_called_once_with(
         tenant_id="tenant-1", agent_id="agent-1", prefix="docs/", include_download_url=True, session=ANY
@@ -71,18 +73,17 @@ def test_skills_requires_tenant_id_and_returns_items():
     assert status == 400
     assert body["code"] == "missing_tenant_id"
 
-    with app.test_request_context("/?tenant_id=tenant-1"):
-        with patch(f"{_MOD}.AgentDriveService") as svc:
-            svc.return_value.list_skills.return_value = [
-                {
-                    "path": "tender-analyzer",
-                    "skill_md_key": "tender-analyzer/SKILL.md",
-                    "archive_key": None,
-                    "name": "Tender Analyzer",
-                    "description": "Parses RFPs.",
-                }
-            ]
-            result = raw(AgentDriveSkillsApi(), "agent-agent-1")
+    with app.test_request_context("/?tenant_id=tenant-1"), patch(f"{_MOD}.AgentDriveService") as svc:
+        svc.return_value.list_skills.return_value = [
+            {
+                "path": "tender-analyzer",
+                "skill_md_key": "tender-analyzer/SKILL.md",
+                "archive_key": None,
+                "name": "Tender Analyzer",
+                "description": "Parses RFPs.",
+            }
+        ]
+        result = raw(AgentDriveSkillsApi(), "agent-agent-1")
 
     assert result == {
         "items": [
@@ -109,13 +110,13 @@ def test_commit_parses_body_and_returns_items():
         "user_id": "user-1",
         "items": [{"key": "a.txt", "file_ref": {"kind": "tool_file", "id": "tf-1"}}],
     }
-    with app.test_request_context("/", method="POST", json=payload):
-        with (
-            patch(f"{_MOD}.get_user", return_value=_end_user("user-1")) as get_user,
-            patch(f"{_MOD}.AgentDriveService") as svc,
-        ):
-            svc.return_value.commit.return_value = [{"key": "a.txt"}]
-            result = raw(AgentDriveCommitApi(), "agent-agent-1")
+    with (
+        app.test_request_context("/", method="POST", json=payload),
+        patch(f"{_MOD}.get_user", return_value=_end_user("user-1")) as get_user,
+        patch(f"{_MOD}.AgentDriveService") as svc,
+    ):
+        svc.return_value.commit.return_value = [{"key": "a.txt"}]
+        result = raw(AgentDriveCommitApi(), "agent-agent-1")
     assert result == {"items": [{"key": "a.txt"}]}
     assert get_user.call_args.args == ("tenant-1", "user-1")
     assert svc.return_value.commit.call_args.kwargs["agent_id"] == "agent-1"
@@ -129,13 +130,13 @@ def test_commit_canonicalizes_user_before_service_call():
         "user_id": "session-1",
         "items": [{"key": "a.txt", "file_ref": {"kind": "tool_file", "id": "tf-1"}}],
     }
-    with app.test_request_context("/", method="POST", json=payload):
-        with (
-            patch(f"{_MOD}.get_user", return_value=_end_user("end-user-1")),
-            patch(f"{_MOD}.AgentDriveService") as svc,
-        ):
-            svc.return_value.commit.return_value = [{"key": "a.txt"}]
-            result = raw(AgentDriveCommitApi(), "agent-agent-1")
+    with (
+        app.test_request_context("/", method="POST", json=payload),
+        patch(f"{_MOD}.get_user", return_value=_end_user("end-user-1")),
+        patch(f"{_MOD}.AgentDriveService") as svc,
+    ):
+        svc.return_value.commit.return_value = [{"key": "a.txt"}]
+        result = raw(AgentDriveCommitApi(), "agent-agent-1")
 
     assert result == {"items": [{"key": "a.txt"}]}
     assert svc.return_value.commit.call_args.kwargs["user_id"] == "end-user-1"
@@ -156,13 +157,13 @@ def test_commit_maps_service_error():
         "user_id": "user-1",
         "items": [{"key": "a.txt", "file_ref": {"kind": "tool_file", "id": "tf-1"}}],
     }
-    with app.test_request_context("/", method="POST", json=payload):
-        with (
-            patch(f"{_MOD}.get_user", return_value=_end_user("user-1")),
-            patch(f"{_MOD}.AgentDriveService") as svc,
-        ):
-            svc.return_value.commit.side_effect = AgentDriveError("source_not_found", "nope", status_code=404)
-            body, status = raw(AgentDriveCommitApi(), "agent-agent-1")
+    with (
+        app.test_request_context("/", method="POST", json=payload),
+        patch(f"{_MOD}.get_user", return_value=_end_user("user-1")),
+        patch(f"{_MOD}.AgentDriveService") as svc,
+    ):
+        svc.return_value.commit.side_effect = AgentDriveError("source_not_found", "nope", status_code=404)
+        body, status = raw(AgentDriveCommitApi(), "agent-agent-1")
     assert status == 404
     assert body["code"] == "source_not_found"
 

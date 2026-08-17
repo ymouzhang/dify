@@ -94,9 +94,11 @@ def test_infer_retries_once_then_422(monkeypatch, sqlite_session: Session):
         calls.append(1)
         return "not json at all ]["
 
-    with patch.object(SkillToolInferenceService, "_invoke", staticmethod(bad_invoke)):
-        with pytest.raises(SkillToolInferenceError) as exc_info:
-            service.infer(tenant_id="t-1", agent_id="a-1", slug="audio-transcribe", session=sqlite_session)
+    with (
+        patch.object(SkillToolInferenceService, "_invoke", staticmethod(bad_invoke)),
+        pytest.raises(SkillToolInferenceError) as exc_info,
+    ):
+        service.infer(tenant_id="t-1", agent_id="a-1", slug="audio-transcribe", session=sqlite_session)
 
     assert len(calls) == 2  # one retry
     assert exc_info.value.code == "inference_failed"

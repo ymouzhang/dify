@@ -553,22 +553,26 @@ class TestDatasetServiceCreationAndUpdate:
 
     def test_update_dataset_raises_when_dataset_is_missing(self):
         session = MagicMock()
-        with patch.object(DatasetService, "get_dataset", return_value=None):
-            with pytest.raises(ValueError, match="Dataset not found"):
-                DatasetService.update_dataset("dataset-1", {}, SimpleNamespace(id="user-1"), session=session)
+        with (
+            patch.object(DatasetService, "get_dataset", return_value=None),
+            pytest.raises(ValueError, match="Dataset not found"),
+        ):
+            DatasetService.update_dataset("dataset-1", {}, SimpleNamespace(id="user-1"), session=session)
 
     def test_update_dataset_raises_when_new_name_conflicts(self):
         dataset = DatasetServiceUnitDataFactory.create_dataset_mock(dataset_id="dataset-1", tenant_id="tenant-1")
         dataset.name = "Old Dataset"
 
         with (
-            patch.object(DatasetService, "get_dataset", return_value=dataset),
-            patch.object(DatasetService, "_has_dataset_same_name", return_value=True),
+            (
+                patch.object(DatasetService, "get_dataset", return_value=dataset),
+                patch.object(DatasetService, "_has_dataset_same_name", return_value=True),
+            ),
+            pytest.raises(ValueError, match="Dataset name already exists"),
         ):
-            with pytest.raises(ValueError, match="Dataset name already exists"):
-                DatasetService.update_dataset(
-                    "dataset-1", {"name": "New Dataset"}, SimpleNamespace(id="user-1"), session=MagicMock()
-                )
+            DatasetService.update_dataset(
+                "dataset-1", {"name": "New Dataset"}, SimpleNamespace(id="user-1"), session=MagicMock()
+            )
 
     def test_update_dataset_routes_external_datasets_to_external_helper(self):
         dataset = DatasetServiceUnitDataFactory.create_dataset_mock(dataset_id="dataset-1", tenant_id="tenant-1")
@@ -682,17 +686,17 @@ class TestDatasetServiceCreationAndUpdate:
                 side_effect=ValueError("api template not found"),
             ) as get_external_knowledge_api,
             patch.object(DatasetService, "_update_external_knowledge_binding") as update_binding,
+            pytest.raises(ValueError, match="api template not found"),
         ):
-            with pytest.raises(ValueError, match="api template not found"):
-                DatasetService._update_external_dataset(
-                    dataset,
-                    {
-                        "external_knowledge_id": "knowledge-1",
-                        "external_knowledge_api_id": "foreign-api",
-                    },
-                    SimpleNamespace(id="user-1"),
-                    session,
-                )
+            DatasetService._update_external_dataset(
+                dataset,
+                {
+                    "external_knowledge_id": "knowledge-1",
+                    "external_knowledge_api_id": "foreign-api",
+                },
+                SimpleNamespace(id="user-1"),
+                session,
+            )
 
         get_external_knowledge_api.assert_called_once_with("foreign-api", dataset.tenant_id, session=session)
         update_binding.assert_not_called()
@@ -1094,14 +1098,16 @@ class TestDatasetServiceCreationAndUpdate:
         )
         session = MagicMock()
 
-        with patch.object(DatasetService, "_apply_new_embedding_settings", side_effect=LLMBadRequestError()):
-            with pytest.raises(ValueError, match="No Embedding Model available"):
-                DatasetService._update_embedding_model_settings(
-                    dataset,
-                    {"embedding_model_provider": "provider-two", "embedding_model": "embedding-model-two"},
-                    {},
-                    session,
-                )
+        with (
+            patch.object(DatasetService, "_apply_new_embedding_settings", side_effect=LLMBadRequestError()),
+            pytest.raises(ValueError, match="No Embedding Model available"),
+        ):
+            DatasetService._update_embedding_model_settings(
+                dataset,
+                {"embedding_model_provider": "provider-two", "embedding_model": "embedding-model-two"},
+                {},
+                session,
+            )
 
     def test_apply_new_embedding_settings_updates_binding_for_new_model(self):
         class FakeAccount:
@@ -1207,9 +1213,11 @@ class TestDatasetServiceRagPipelineSettings:
         dataset = DatasetServiceUnitDataFactory.create_dataset_mock(dataset_id="dataset-1")
         knowledge_configuration = _make_knowledge_configuration()
 
-        with patch("services.dataset_service.current_user", SimpleNamespace(current_tenant_id=None)):
-            with pytest.raises(ValueError, match="Current user or current tenant not found"):
-                DatasetService.update_rag_pipeline_dataset_settings(dataset, knowledge_configuration, session=session)
+        with (
+            patch("services.dataset_service.current_user", SimpleNamespace(current_tenant_id=None)),
+            pytest.raises(ValueError, match="Current user or current tenant not found"),
+        ):
+            DatasetService.update_rag_pipeline_dataset_settings(dataset, knowledge_configuration, session=session)
 
     def test_update_rag_pipeline_dataset_settings_without_published_high_quality_updates_embedding_settings(self):
         session = MagicMock()
@@ -1269,11 +1277,13 @@ class TestDatasetServiceRagPipelineSettings:
         session.merge.return_value = dataset
         knowledge_configuration = _make_knowledge_configuration(chunk_structure="sentence")
 
-        with patch("services.dataset_service.current_user", SimpleNamespace(current_tenant_id="tenant-1")):
-            with pytest.raises(ValueError, match="Chunk structure is not allowed to be updated"):
-                DatasetService.update_rag_pipeline_dataset_settings(
-                    dataset, knowledge_configuration, has_published=True, session=session
-                )
+        with (
+            patch("services.dataset_service.current_user", SimpleNamespace(current_tenant_id="tenant-1")),
+            pytest.raises(ValueError, match="Chunk structure is not allowed to be updated"),
+        ):
+            DatasetService.update_rag_pipeline_dataset_settings(
+                dataset, knowledge_configuration, has_published=True, session=session
+            )
 
     def test_update_rag_pipeline_dataset_settings_with_published_rejects_switch_to_economy(self):
         session = MagicMock()
@@ -1287,14 +1297,16 @@ class TestDatasetServiceRagPipelineSettings:
             embedding_model="",
         )
 
-        with patch("services.dataset_service.current_user", SimpleNamespace(current_tenant_id="tenant-1")):
-            with pytest.raises(
+        with (
+            patch("services.dataset_service.current_user", SimpleNamespace(current_tenant_id="tenant-1")),
+            pytest.raises(
                 ValueError,
                 match="Knowledge base indexing technique is not allowed to be updated to economy",
-            ):
-                DatasetService.update_rag_pipeline_dataset_settings(
-                    dataset, knowledge_configuration, has_published=True, session=session
-                )
+            ),
+        ):
+            DatasetService.update_rag_pipeline_dataset_settings(
+                dataset, knowledge_configuration, has_published=True, session=session
+            )
 
     def test_update_rag_pipeline_dataset_settings_with_published_adds_high_quality_index(self):
         session = MagicMock()
@@ -1508,11 +1520,13 @@ class TestDatasetPermissionService:
         )
         session = MagicMock()
 
-        with patch.object(DatasetPermissionService, "get_dataset_partial_member_list", return_value=["user-1"]):
-            with pytest.raises(ValueError, match="cannot change the dataset permissions"):
-                DatasetPermissionService.check_permission(
-                    user, dataset, "partial_members", [{"user_id": "user-2"}], session=session
-                )
+        with (
+            patch.object(DatasetPermissionService, "get_dataset_partial_member_list", return_value=["user-1"]),
+            pytest.raises(ValueError, match="cannot change the dataset permissions"),
+        ):
+            DatasetPermissionService.check_permission(
+                user, dataset, "partial_members", [{"user_id": "user-2"}], session=session
+            )
 
     def test_check_permission_allows_dataset_operator_when_member_list_is_unchanged(self):
         user = SimpleNamespace(is_dataset_editor=True, is_dataset_operator=True)
