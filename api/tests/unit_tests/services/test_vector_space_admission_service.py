@@ -1,5 +1,6 @@
 import json
 import threading
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace, TracebackType
 from typing import cast
@@ -8,7 +9,6 @@ from unittest.mock import call, patch
 import pytest
 from sqlalchemy.orm import Session
 
-from configs import dify_config
 from core.rag.datasource.vdb.vector_type import VectorType
 from core.rag.index_processor.constant.index_type import IndexStructureType, IndexTechniqueType
 from core.rag.models.document import AttachmentDocument, ChildDocument, Document
@@ -29,6 +29,14 @@ from services.vector_space_admission_service import (
 
 _MEBIBYTE = 1024 * 1024
 _ESTIMATE_LIMITS = "sandbox:60,professional:6400,team:25600"
+
+
+@pytest.fixture(autouse=True)
+def _vector_admission_config(config_overrides: Callable[..., None]) -> None:
+    config_overrides(
+        DEPLOYMENT_EDITION=DeploymentEdition.CLOUD,
+        TIDB_ON_QDRANT_ESTIMATED_STORAGE_LIMITS_MB=_ESTIMATE_LIMITS,
+    )
 
 
 class _FakeRedisLock:
@@ -98,11 +106,6 @@ def _check_estimate(
     with (
         patch.object(service, "_get_plan", return_value=plan),
         patch.object(service, "_get_embedding_dimension", return_value=3072),
-        patch.object(dify_config, "DEPLOYMENT_EDITION", DeploymentEdition.CLOUD),
-        patch(
-            "services.vector_space_admission_service.dify_config.TIDB_ON_QDRANT_ESTIMATED_STORAGE_LIMITS_MB",
-            _ESTIMATE_LIMITS,
-        ),
         patch(
             "services.vector_space_admission_service.Vector.resolve_vector_type",
             return_value=VectorType.TIDB_ON_QDRANT,
@@ -234,10 +237,10 @@ def test_pipeline_qa_workload_counts_question_vectors_without_summaries() -> Non
     assert workload.summary_points == 0
 
 
-def test_admission_is_cloud_only() -> None:
+def test_admission_is_cloud_only(config_overrides: Callable[..., None]) -> None:
+    config_overrides(DEPLOYMENT_EDITION=DeploymentEdition.COMMUNITY)
     service = VectorSpaceAdmissionService()
     with (
-        patch.object(dify_config, "DEPLOYMENT_EDITION", DeploymentEdition.COMMUNITY),
         patch("services.vector_space_admission_service.Vector.resolve_vector_type") as resolve_vector_type,
         patch("services.vector_space_admission_service.BillingService.get_info") as get_info,
     ):
@@ -255,7 +258,6 @@ def test_admission_is_cloud_only() -> None:
 def test_admission_skips_non_tidb_vector_backends() -> None:
     service = VectorSpaceAdmissionService()
     with (
-        patch.object(dify_config, "DEPLOYMENT_EDITION", DeploymentEdition.CLOUD),
         patch("services.vector_space_admission_service.Vector.resolve_vector_type", return_value=VectorType.QDRANT),
         patch("services.vector_space_admission_service.BillingService.get_info") as get_info,
     ):
@@ -356,11 +358,6 @@ def test_usage_lookup_is_refreshed_for_each_document() -> None:
     with (
         patch.object(service, "_get_plan", return_value=CloudPlan.SANDBOX),
         patch.object(service, "_get_embedding_dimension", return_value=3072),
-        patch.object(dify_config, "DEPLOYMENT_EDITION", DeploymentEdition.CLOUD),
-        patch(
-            "services.vector_space_admission_service.dify_config.TIDB_ON_QDRANT_ESTIMATED_STORAGE_LIMITS_MB",
-            _ESTIMATE_LIMITS,
-        ),
         patch(
             "services.vector_space_admission_service.Vector.resolve_vector_type",
             return_value=VectorType.TIDB_ON_QDRANT,
