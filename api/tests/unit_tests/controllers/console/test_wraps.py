@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from types import SimpleNamespace
 from typing import override
 from unittest.mock import MagicMock, patch
@@ -48,6 +49,15 @@ from services.entities.feature_entities import LicenseStatus
 def reset_setup_required_cache():
     """Keep setup_required's process cache isolated across unit tests."""
     _is_setup_completed.reset_success()
+
+
+@pytest.fixture(autouse=True)
+def _wraps_config(config_overrides: Callable[..., None]) -> None:
+    config_overrides(
+        RBAC_ENABLED=True,
+        DEPLOYMENT_EDITION=DeploymentEdition.COMMUNITY,
+        INIT_PASSWORD="",
+    )
 
 
 class MockUser(UserMixin):
@@ -261,7 +271,6 @@ class TestRbacPermissionRequired:
             return "ok"
 
         with (
-            patch("controllers.common.wraps.dify_config.RBAC_ENABLED", True),
             patch("controllers.common.wraps.current_account_with_tenant", return_value=(current_user, "tenant-1")),
             patch("controllers.common.wraps._extract_resource_id", return_value="app-123") as mock_extract,
             patch("controllers.common.wraps._is_resource_owned_by_current_user", return_value=False) as mock_owned,
@@ -289,7 +298,6 @@ class TestRbacPermissionRequired:
             return "ok"
 
         with (
-            patch("controllers.common.wraps.dify_config.RBAC_ENABLED", True),
             patch("controllers.common.wraps.current_account_with_tenant", return_value=(current_user, "tenant-2")),
             patch("controllers.common.wraps._extract_resource_id") as mock_extract,
             patch("controllers.common.wraps._is_resource_owned_by_current_user", return_value=False) as mock_owned,
@@ -317,7 +325,6 @@ class TestRbacPermissionRequired:
             return "ok"
 
         with (
-            patch("controllers.common.wraps.dify_config.RBAC_ENABLED", True),
             patch("controllers.common.wraps.current_account_with_tenant", return_value=(current_user, "tenant-3")),
             patch("controllers.common.wraps.RBACService.CheckAccess.check", return_value=True) as mock_check,
         ):
@@ -339,7 +346,6 @@ class TestRbacPermissionRequired:
             return "ok"
 
         with (
-            patch("controllers.common.wraps.dify_config.RBAC_ENABLED", True),
             patch("controllers.common.wraps.current_account_with_tenant", return_value=(current_user, "tenant-4")),
             patch("controllers.common.wraps._extract_resource_id", return_value="app-123"),
             patch("controllers.common.wraps._is_resource_owned_by_current_user", return_value=True) as mock_owned,
@@ -358,7 +364,6 @@ class TestRbacPermissionRequired:
             return "ok"
 
         with (
-            patch("controllers.common.wraps.dify_config.RBAC_ENABLED", True),
             patch("controllers.common.wraps.current_account_with_tenant", return_value=(current_user, "tenant-5")),
             patch("controllers.common.wraps._extract_resource_id", return_value="dataset-123"),
             patch("controllers.common.wraps._is_resource_owned_by_current_user", return_value=True) as mock_owned,
@@ -472,8 +477,7 @@ class TestRbacPermissionRequired:
         def protected_view():
             return "ok"
 
-        with patch("controllers.console.wraps.dify_config.RBAC_ENABLED", True):
-            assert protected_view() == "ok"
+        assert protected_view() == "ok"
 
 
 class TestModelValidationInjection:
@@ -530,7 +534,7 @@ class TestModelValidationInjection:
 class TestEditionChecks:
     """Test edition-specific decorators"""
 
-    def test_only_edition_cloud_allows_cloud_edition(self):
+    def test_only_edition_cloud_allows_cloud_edition(self, config_overrides: Callable[..., None]):
         """Test cloud edition decorator allows CLOUD edition"""
 
         # Arrange
@@ -538,9 +542,8 @@ class TestEditionChecks:
         def cloud_view():
             return "cloud_success"
 
-        # Act
-        with patch("controllers.console.wraps.dify_config.DEPLOYMENT_EDITION", DeploymentEdition.CLOUD):
-            result = cloud_view()
+        config_overrides(DEPLOYMENT_EDITION=DeploymentEdition.CLOUD)
+        result = cloud_view()
 
         # Assert
         assert result == "cloud_success"
@@ -556,12 +559,11 @@ class TestEditionChecks:
 
         # Act & Assert
         with app.test_request_context():
-            with patch("controllers.console.wraps.dify_config.DEPLOYMENT_EDITION", DeploymentEdition.COMMUNITY):
-                with pytest.raises(HTTPException) as exc_info:
-                    cloud_view()
-                assert exc_info.value.code == 404
+            with pytest.raises(HTTPException) as exc_info:
+                cloud_view()
+            assert exc_info.value.code == 404
 
-    def test_only_edition_enterprise_allows_enterprise_edition(self):
+    def test_only_edition_enterprise_allows_enterprise_edition(self, config_overrides: Callable[..., None]):
         """Test enterprise edition decorator allows the ENTERPRISE edition."""
 
         # Arrange
@@ -569,9 +571,8 @@ class TestEditionChecks:
         def enterprise_view():
             return "enterprise_success"
 
-        # Act
-        with patch("controllers.console.wraps.dify_config.DEPLOYMENT_EDITION", DeploymentEdition.ENTERPRISE):
-            result = enterprise_view()
+        config_overrides(DEPLOYMENT_EDITION=DeploymentEdition.ENTERPRISE)
+        result = enterprise_view()
 
         # Assert
         assert result == "enterprise_success"
@@ -585,8 +586,7 @@ class TestEditionChecks:
             return "self_hosted_success"
 
         # Act
-        with patch("controllers.console.wraps.dify_config.DEPLOYMENT_EDITION", DeploymentEdition.COMMUNITY):
-            result = self_hosted_view()
+        result = self_hosted_view()
 
         # Assert
         assert result == "self_hosted_success"
@@ -667,8 +667,9 @@ class TestBillingResourceLimits:
         assert result == "member_added"
         get_features.assert_called_once_with("tenant123", exclude_vector_space=True)
 
-    def test_should_load_vector_space_from_dedicated_quota_api(self):
+    def test_should_load_vector_space_from_dedicated_quota_api(self, config_overrides: Callable[..., None]):
         """Test vector-space limit checks avoid loading the full feature payload."""
+        config_overrides(DEPLOYMENT_EDITION=DeploymentEdition.CLOUD)
         # Arrange
         mock_vector_space = MagicMock()
         mock_vector_space.limit = 10
@@ -683,7 +684,6 @@ class TestBillingResourceLimits:
             "controllers.console.wraps.current_account_with_tenant", return_value=(MockUser("test_user"), "tenant123")
         ):
             with (
-                patch("controllers.console.wraps.dify_config.DEPLOYMENT_EDITION", DeploymentEdition.CLOUD),
                 patch(
                     "controllers.console.wraps.FeatureService.get_vector_space", return_value=mock_vector_space
                 ) as get_vector_space,
@@ -846,8 +846,9 @@ class TestRateLimiting:
 class TestCloudUtmRecord:
     """Test cloud UTM recording decorator."""
 
-    def test_should_record_utm_for_cloud_edition_and_cookie(self):
+    def test_should_record_utm_for_cloud_edition_and_cookie(self, config_overrides: Callable[..., None]):
         """Test Cloud UTM recording without loading tenant features."""
+        config_overrides(DEPLOYMENT_EDITION=DeploymentEdition.CLOUD)
         app = create_app_with_login()
 
         @cloud_utm_record
@@ -856,7 +857,6 @@ class TestCloudUtmRecord:
 
         with app.test_request_context("/", headers={"Cookie": "utm_info={}"}):
             with (
-                patch("controllers.console.wraps.dify_config.DEPLOYMENT_EDITION", DeploymentEdition.CLOUD),
                 patch("controllers.console.wraps.current_account_with_tenant", return_value=(MockUser("u1"), "t1")),
                 patch("controllers.console.wraps.OperationService.record_utm") as record_utm,
                 patch("controllers.console.wraps.FeatureService.get_features") as get_features,
@@ -877,7 +877,6 @@ class TestCloudUtmRecord:
 
         with app.test_request_context("/", headers={"Cookie": "utm_info={}"}):
             with (
-                patch("controllers.console.wraps.dify_config.DEPLOYMENT_EDITION", DeploymentEdition.COMMUNITY),
                 patch("controllers.console.wraps.current_account_with_tenant") as current_account,
                 patch("controllers.console.wraps.OperationService.record_utm") as record_utm,
                 patch("controllers.console.wraps.FeatureService.get_features") as get_features,
@@ -903,8 +902,7 @@ class TestSystemSetup:
             return "admin_success"
 
         # Act
-        with patch("controllers.console.wraps.dify_config.DEPLOYMENT_EDITION", DeploymentEdition.COMMUNITY):
-            result = admin_view()
+        result = admin_view()
 
         # Assert
         assert result == "admin_success"
@@ -918,9 +916,8 @@ class TestSystemSetup:
         def admin_view():
             return "admin_success"
 
-        with patch("controllers.console.wraps.dify_config.DEPLOYMENT_EDITION", DeploymentEdition.COMMUNITY):
-            assert admin_view() == "admin_success"
-            assert admin_view() == "admin_success"
+        assert admin_view() == "admin_success"
+        assert admin_view() == "admin_success"
 
         assert mock_db.session.scalar.call_count == 1
 
@@ -933,18 +930,16 @@ class TestSystemSetup:
         def admin_view():
             return "admin_success"
 
-        with (
-            patch("controllers.console.wraps.dify_config.DEPLOYMENT_EDITION", DeploymentEdition.COMMUNITY),
-            patch("controllers.console.wraps.dify_config.INIT_PASSWORD", ""),
-        ):
-            with pytest.raises(NotSetupError):
-                admin_view()
-            assert admin_view() == "admin_success"
+        with pytest.raises(NotSetupError):
+            admin_view()
+        assert admin_view() == "admin_success"
 
         assert mock_db.session.scalar.call_count == 2
 
     @patch("controllers.console.wraps.db")
-    def test_should_raise_not_init_validate_error_with_init_password(self, mock_db: MagicMock):
+    def test_should_raise_not_init_validate_error_with_init_password(
+        self, mock_db: MagicMock, config_overrides: Callable[..., None]
+    ):
         """Test NotInitValidateError when INIT_PASSWORD is set but setup not complete"""
         # Arrange
         mock_db.session.scalar.return_value = None  # No setup
@@ -953,13 +948,9 @@ class TestSystemSetup:
         def admin_view():
             return "admin_success"
 
-        # Act & Assert
-        with (
-            patch("controllers.console.wraps.dify_config.DEPLOYMENT_EDITION", DeploymentEdition.COMMUNITY),
-            patch("controllers.console.wraps.dify_config.INIT_PASSWORD", "some_password"),
-        ):
-            with pytest.raises(NotInitValidateError):
-                admin_view()
+        config_overrides(INIT_PASSWORD="some_password")
+        with pytest.raises(NotInitValidateError):
+            admin_view()
 
     @patch("controllers.console.wraps.db")
     def test_should_raise_not_setup_error_without_init_password(self, mock_db: MagicMock):
@@ -971,13 +962,8 @@ class TestSystemSetup:
         def admin_view():
             return "admin_success"
 
-        # Act & Assert
-        with (
-            patch("controllers.console.wraps.dify_config.DEPLOYMENT_EDITION", DeploymentEdition.COMMUNITY),
-            patch("controllers.console.wraps.dify_config.INIT_PASSWORD", ""),
-        ):
-            with pytest.raises(NotSetupError):
-                admin_view()
+        with pytest.raises(NotSetupError):
+            admin_view()
 
 
 class TestEnterpriseLicense:
