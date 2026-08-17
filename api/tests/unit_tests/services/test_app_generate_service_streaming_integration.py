@@ -8,6 +8,7 @@ import pytest
 from core.app.apps.message_generator import MessageGenerator
 from models.model import AppMode
 from services.app_generate_service import AppGenerateService
+from tests.unit_tests.config_override import apply_config_overrides
 
 
 # -----------------------------
@@ -101,10 +102,7 @@ def _patch_get_channel_streams(monkeypatch: pytest.MonkeyPatch):
     # Patch both the source and the imported alias used by MessageGenerator
     monkeypatch.setattr("extensions.ext_redis.get_pubsub_broadcast_channel", lambda: chan)
     monkeypatch.setattr("core.app.apps.message_generator.get_pubsub_broadcast_channel", lambda: chan)
-    # Ensure AppGenerateService sees streams mode
-    import services.app_generate_service as ags
-
-    monkeypatch.setattr(ags.dify_config, "PUBSUB_REDIS_CHANNEL_TYPE", "streams", raising=False)
+    apply_config_overrides(monkeypatch, PUBSUB_REDIS_CHANNEL_TYPE="streams")
 
 
 @pytest.fixture
@@ -121,10 +119,7 @@ def _patch_get_channel_pubsub(monkeypatch: pytest.MonkeyPatch):
     # Patch both the source and the imported alias used by MessageGenerator
     monkeypatch.setattr("extensions.ext_redis.get_pubsub_broadcast_channel", lambda: chan)
     monkeypatch.setattr("core.app.apps.message_generator.get_pubsub_broadcast_channel", lambda: chan)
-    # Ensure AppGenerateService sees pubsub mode
-    import services.app_generate_service as ags
-
-    monkeypatch.setattr(ags.dify_config, "PUBSUB_REDIS_CHANNEL_TYPE", "pubsub", raising=False)
+    apply_config_overrides(monkeypatch, PUBSUB_REDIS_CHANNEL_TYPE="pubsub")
 
 
 def _publish_events(app_mode: AppMode, run_id: str, events: list[dict]):

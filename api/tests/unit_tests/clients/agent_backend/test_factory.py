@@ -6,9 +6,9 @@ import pytest
 from dify_agent.client import Client
 
 from clients.agent_backend.factory import create_agent_backend_client, create_agent_backend_run_client
-from configs import dify_config
 from services import agent_app_sandbox_service
 from services.agent import home_snapshot_service, workspace_service
+from tests.unit_tests.config_override import apply_config_overrides
 
 
 @pytest.mark.parametrize(
@@ -63,8 +63,11 @@ def test_default_agent_backend_clients_forward_authentication(
     factory: Callable[[], Client],
     module: ModuleType,
 ) -> None:
-    monkeypatch.setattr(dify_config, "AGENT_BACKEND_BASE_URL", "http://agent-backend")
-    monkeypatch.setattr(dify_config, "AGENT_BACKEND_API_TOKEN", "secret-token")
+    apply_config_overrides(
+        monkeypatch,
+        AGENT_BACKEND_BASE_URL="http://agent-backend",
+        AGENT_BACKEND_API_TOKEN="secret-token",
+    )
     create_client = MagicMock()
     monkeypatch.setattr(module, "create_agent_backend_client", create_client)
 

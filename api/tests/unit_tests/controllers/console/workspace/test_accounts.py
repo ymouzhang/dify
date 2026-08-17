@@ -43,6 +43,7 @@ from models.account import AccountStatus, InvitationCodeStatus, TenantAccountRol
 from models.enums import CreatorUserRole
 from models.model import UploadFile
 from services.errors.account import CurrentPasswordIncorrectError as ServicePwdError
+from tests.unit_tests.config_override import config_overrides_context
 
 
 def make_account(account_id: str = "u1", *, status: AccountStatus = AccountStatus.ACTIVE) -> Account:
@@ -120,7 +121,7 @@ class TestAccountInitApi:
 
         with (
             app.test_request_context("/account/init", json=payload),
-            patch("controllers.console.workspace.account.dify_config.DEPLOYMENT_EDITION", DeploymentEdition.CLOUD),
+            config_overrides_context(DEPLOYMENT_EDITION=DeploymentEdition.CLOUD),
             patch("controllers.console.workspace.account.db.session", sqlite_session),
         ):
             resp = method(api, account)

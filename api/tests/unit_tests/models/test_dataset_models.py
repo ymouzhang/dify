@@ -46,6 +46,7 @@ from models.enums import (
     SegmentStatus,
 )
 from models.model import UploadFile
+from tests.unit_tests.config_override import apply_config_overrides
 
 
 class TestDatasetModelValidation:
@@ -1060,9 +1061,12 @@ class TestDocumentSegmentIndexing:
 
         monkeypatch.setattr("models.dataset.time.time", lambda: 1700000000)
         monkeypatch.setattr("models.dataset.os.urandom", lambda _: b"\x01" * 16)
-        monkeypatch.setattr("models.dataset.dify_config.SECRET_KEY", "unit-secret")
-        monkeypatch.setattr("models.dataset.dify_config.FILES_URL", "https://files.example.com")
-        monkeypatch.setattr("models.dataset.dify_config.CONSOLE_API_URL", "https://console.example.com")
+        apply_config_overrides(
+            monkeypatch,
+            SECRET_KEY="unit-secret",
+            FILES_URL="https://files.example.com",
+            CONSOLE_API_URL="https://console.example.com",
+        )
 
         session = Mock()
         session.execute.return_value.all.return_value = [(Mock(), attachment)]

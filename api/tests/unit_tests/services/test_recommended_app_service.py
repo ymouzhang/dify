@@ -15,6 +15,7 @@ from enums import DeploymentEdition
 from models.model import AccountTrialAppRecord, App, AppMode, TrialApp
 from services import recommended_app_service as service_module
 from services.recommended_app_service import RecommendedAppService
+from tests.unit_tests.config_override import apply_config_overrides
 
 pytestmark = pytest.mark.parametrize(
     "sqlite_session",
@@ -124,7 +125,7 @@ def _mock_factory_for_apps(
     retrieval_instance = MagicMock()
     retrieval_instance.get_recommended_apps_and_categories.return_value = result
     retrieval_factory = MagicMock(return_value=retrieval_instance)
-    monkeypatch.setattr(service_module.dify_config, "HOSTED_FETCH_APP_TEMPLATES_MODE", mode, raising=False)
+    apply_config_overrides(monkeypatch, HOSTED_FETCH_APP_TEMPLATES_MODE=mode)
     monkeypatch.setattr(
         service_module.RecommendAppRetrievalFactory,
         "get_recommend_app_factory",
@@ -149,7 +150,7 @@ def _mock_factory_for_app_detail(
     retrieval_instance = MagicMock()
     retrieval_instance.get_recommend_app_detail.return_value = result
     retrieval_factory = MagicMock(return_value=retrieval_instance)
-    monkeypatch.setattr(service_module.dify_config, "HOSTED_FETCH_APP_TEMPLATES_MODE", "remote", raising=False)
+    apply_config_overrides(monkeypatch, HOSTED_FETCH_APP_TEMPLATES_MODE="remote")
     monkeypatch.setattr(
         service_module.RecommendAppRetrievalFactory,
         "get_recommend_app_factory",
@@ -494,7 +495,7 @@ class TestRecommendedAppServiceTrialFeatures:
         retrieval_instance = MagicMock()
         retrieval_instance.get_recommend_app_detail.return_value = detail
         retrieval_factory = MagicMock(return_value=retrieval_instance)
-        monkeypatch.setattr(service_module.dify_config, "HOSTED_FETCH_APP_TEMPLATES_MODE", "remote", raising=False)
+        apply_config_overrides(monkeypatch, HOSTED_FETCH_APP_TEMPLATES_MODE="remote")
         monkeypatch.setattr(
             service_module.RecommendAppRetrievalFactory,
             "get_recommend_app_factory",

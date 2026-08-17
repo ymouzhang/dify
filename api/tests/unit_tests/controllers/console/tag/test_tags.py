@@ -27,6 +27,7 @@ from models.base import TypeBase
 from models.enums import TagType
 from models.model import Tag
 from services.tag_service import UpdateTagPayload
+from tests.unit_tests.config_override import config_overrides_context
 
 
 def unwrap(func):
@@ -195,7 +196,7 @@ class TestTagListApi:
 
         with app.test_request_context("/", json=payload):
             with (
-                patch("controllers.console.tag.tags.dify_config.RBAC_ENABLED", True),
+                config_overrides_context(RBAC_ENABLED=True),
                 patch(
                     "controllers.console.tag.tags.current_account_with_tenant",
                     return_value=(admin_user, "tenant-1"),
@@ -298,7 +299,7 @@ class TestTagUpdateDeleteApi:
 
         with (
             app.test_request_context("/"),
-            patch("controllers.console.tag.tags.dify_config.RBAC_ENABLED", True),
+            config_overrides_context(RBAC_ENABLED=True),
             patch(
                 "controllers.console.tag.tags.current_account_with_tenant",
                 return_value=(admin_user, "tenant-1"),
@@ -343,7 +344,7 @@ class TestTagUpdateDeleteApi:
 
         with (
             app.test_request_context("/"),
-            patch("controllers.console.tag.tags.dify_config.RBAC_ENABLED", True),
+            config_overrides_context(RBAC_ENABLED=True),
             patch(
                 "controllers.console.tag.tags.current_account_with_tenant",
                 return_value=(admin_user, "tenant-1"),

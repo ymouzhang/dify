@@ -16,6 +16,7 @@ from controllers.console.auth.error import InvitationAccountMismatchError
 from controllers.console.error import AccountInFreezeError, AlreadyActivateError
 from enums import DeploymentEdition
 from models.account import Account, AccountStatus, Tenant, TenantAccountJoin, TenantAccountRole
+from tests.unit_tests.config_override import apply_config_overrides
 
 
 @pytest.fixture
@@ -286,7 +287,7 @@ class TestActivateApi:
         assert isinstance(account, Account)
         account.email = "Invitee@Example.com"
         sqlite_session.commit()
-        monkeypatch.setattr(activate_module.dify_config, "DEPLOYMENT_EDITION", DeploymentEdition.CLOUD)
+        apply_config_overrides(monkeypatch, DEPLOYMENT_EDITION=DeploymentEdition.CLOUD)
 
         with (
             patch.object(

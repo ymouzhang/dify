@@ -3,7 +3,6 @@ from types import SimpleNamespace
 import pytest
 from werkzeug.exceptions import Forbidden
 
-from configs import dify_config
 from controllers.console import workflow_run_archive
 from controllers.console.workflow_run_archive import (
     WorkflowRunArchiveDownloadApi,
@@ -12,6 +11,7 @@ from controllers.console.workflow_run_archive import (
     WorkflowRunArchivesApi,
 )
 from models import TenantAccountRole
+from tests.unit_tests.config_override import apply_config_overrides
 
 
 @pytest.mark.parametrize(
@@ -23,7 +23,7 @@ def test_current_owner_or_admin_ids_rejects_non_manager(
     monkeypatch: pytest.MonkeyPatch, role: TenantAccountRole, rbac_enabled: bool
 ) -> None:
     current_user = SimpleNamespace(id="account-1", current_role=role)
-    monkeypatch.setattr(dify_config, "RBAC_ENABLED", rbac_enabled)
+    apply_config_overrides(monkeypatch, RBAC_ENABLED=rbac_enabled)
     monkeypatch.setattr(
         workflow_run_archive,
         "current_account_with_tenant",
@@ -40,7 +40,7 @@ def test_current_owner_or_admin_ids_returns_current_ids_for_manager(
     monkeypatch: pytest.MonkeyPatch, role: TenantAccountRole, rbac_enabled: bool
 ) -> None:
     current_user = SimpleNamespace(id="account-1", current_role=role)
-    monkeypatch.setattr(dify_config, "RBAC_ENABLED", rbac_enabled)
+    apply_config_overrides(monkeypatch, RBAC_ENABLED=rbac_enabled)
     monkeypatch.setattr(
         workflow_run_archive,
         "current_account_with_tenant",

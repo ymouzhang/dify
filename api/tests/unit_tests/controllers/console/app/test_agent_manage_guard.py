@@ -8,6 +8,7 @@ from controllers.console.app.error import AppNotFoundError
 from controllers.console.app.wraps import agent_manage_required_for_agent_app
 from core.rbac import RBACPermission, RBACResourceScope
 from models.agent import AgentScope
+from tests.unit_tests.config_override import config_overrides_context
 
 TENANT_ID = "tenant-1"
 ACCOUNT = SimpleNamespace(id="account-1")
@@ -36,7 +37,7 @@ def _patch_guard(app_model, rbac_enabled: bool):
     return (
         patch("controllers.console.app.wraps.db", mock_db),
         patch("controllers.console.app.wraps.current_account_with_tenant", return_value=(ACCOUNT, TENANT_ID)),
-        patch("controllers.console.app.wraps.dify_config.RBAC_ENABLED", rbac_enabled),
+        config_overrides_context(RBAC_ENABLED=rbac_enabled),
     )
 
 
