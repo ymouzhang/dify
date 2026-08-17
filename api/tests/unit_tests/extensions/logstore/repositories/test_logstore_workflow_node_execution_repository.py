@@ -1,8 +1,8 @@
+from collections.abc import Callable
 from types import SimpleNamespace
 from typing import cast
 from unittest.mock import MagicMock, patch
 
-import pytest
 from sqlalchemy.orm import Session, sessionmaker
 
 from extensions.logstore.repositories.logstore_workflow_node_execution_repository import (
@@ -13,9 +13,9 @@ from models.workflow import WorkflowNodeExecutionTriggeredFrom
 
 
 def test_save_synchronously_writes_sql_when_dual_write_is_disabled(
-    monkeypatch: pytest.MonkeyPatch, sqlite_session_factory: sessionmaker[Session]
+    config_overrides: Callable[..., None], sqlite_session_factory: sessionmaker[Session]
 ) -> None:
-    monkeypatch.delenv("LOGSTORE_DUAL_WRITE_ENABLED", raising=False)
+    config_overrides(LOGSTORE_DUAL_WRITE_ENABLED=False)
     with (
         patch("extensions.logstore.repositories.logstore_workflow_node_execution_repository.AliyunLogStore"),
         patch(
