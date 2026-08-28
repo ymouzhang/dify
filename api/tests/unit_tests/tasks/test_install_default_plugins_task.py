@@ -40,6 +40,32 @@ def test_install_default_plugins_task_installs_latest_identifiers(monkeypatch: p
     install.assert_called_once_with("tenant-1", plugin_identifiers)
 
 
+def test_install_default_plugins_task_uses_bundled_package_without_marketplace(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import tasks.install_default_plugins_task as task_module
+    from tasks.install_default_plugins_task import install_default_plugins_task
+
+    plugin_id = "langgenius/openai_api_compatible"
+    response = SimpleNamespace(all_installed=False, task_id="bundled-task-1")
+    install_bundled = MagicMock(return_value=response)
+    wait_for_install = MagicMock()
+    marketplace_fetch = MagicMock()
+    marketplace_install = MagicMock()
+    monkeypatch.setattr(task_module, "load_bundled_plugins", MagicMock(return_value={plugin_id: object()}))
+    monkeypatch.setattr(task_module, "install_bundled_plugins", install_bundled)
+    monkeypatch.setattr(task_module, "wait_for_plugin_install", wait_for_install)
+    monkeypatch.setattr(task_module.marketplace, "batch_fetch_plugin_manifests", marketplace_fetch)
+    monkeypatch.setattr(task_module.PluginService, "install_from_marketplace_pkg", marketplace_install)
+
+    install_default_plugins_task.run("tenant-1", [plugin_id])
+
+    install_bundled.assert_called_once_with("tenant-1", [plugin_id])
+    wait_for_install.assert_called_once_with("tenant-1", response)
+    marketplace_fetch.assert_not_called()
+    marketplace_install.assert_not_called()
+
+
 def test_install_default_plugins_task_skips_missing_plugins(
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,

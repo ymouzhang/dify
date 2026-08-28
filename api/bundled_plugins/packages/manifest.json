@@ -1,0 +1,36 @@
+{
+  "plugins": [
+    {
+      "plugin_id": "langgenius/openai_api_compatible",
+      "version": "0.0.64",
+      "file": "langgenius-openai_api_compatible-0.0.64-offline.difypkg",
+      "sha256": "dae111b90102c8f25ba9653c01df3b3e0119dae3290c1a3ab883a164ef4d7ad4",
+      "source_dir": "plugins/openai_api_compatible",
+      "source_tree_sha256": "d082af32661164003ad3328d9ff1c687914c016407f6626718656b5c4d3a85b7",
+      "requirements_lock": "plugins/openai_api_compatible/requirements.txt",
+      "wheel_lock": "plugins/openai_api_compatible/wheels.sha256",
+      "python_version": "3.12",
+      "pip_platforms": ["manylinux_2_28_x86_64", "manylinux_2_17_x86_64", "manylinux2014_x86_64"],
+      "marketplace_url": "https://marketplace.dify.ai/api/v1/plugins/langgenius/openai_api_compatible/0.0.64/download",
+      "marketplace_package_sha256": "53c6b590f99ed0a9e8d8dcb435afc3700826fd1ac1493d7e255916fabc6679d2",
+      "marketplace_unique_identifier": "langgenius/openai_api_compatible:0.0.64@ed082da9060cdaf69127de0f39e7ba5d255d74276feed9c88b2ba5226515728c",
+      "retrieved_at": "2026-08-28"
+    },
+    {
+      "plugin_id": "langgenius/agent",
+      "version": "0.0.47",
+      "file": "langgenius-agent-0.0.47-offline.difypkg",
+      "sha256": "f07676e04b6f94dd85f66c47b7b80cb1c199d121e44862e4f819a9b10bbb9114",
+      "source_dir": "plugins/agent",
+      "source_tree_sha256": "d15d61d0cb10a4ace482610a939fa14b6d7824d79bde0fccdca3f53aa5bc4e52",
+      "requirements_lock": "plugins/agent/requirements.txt",
+      "wheel_lock": "plugins/agent/wheels.sha256",
+      "python_version": "3.12",
+      "pip_platforms": ["manylinux_2_28_x86_64", "manylinux_2_17_x86_64", "manylinux2014_x86_64"],
+      "marketplace_url": "https://marketplace.dify.ai/api/v1/plugins/langgenius/agent/0.0.47/download",
+      "marketplace_package_sha256": "6a8ea968efc171a61aabe44075d25ef5640939e7c076756e867f3917257e8684",
+      "marketplace_unique_identifier": "langgenius/agent:0.0.47@b14b5a5259094510a272e5b7facd09aa63352511c13fabcde36a4cac57d1da94",
+      "retrieved_at": "2026-08-28"
+    }
+  ]
+}

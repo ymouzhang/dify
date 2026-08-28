@@ -112,6 +112,12 @@ RUN python -c "import tiktoken; tiktoken.encoding_for_model('gpt2')" \
 # Copy source code
 COPY --chown=dify:dify api /app/api/
 
+# The online packaging job builds each runtime package from reviewed Marketplace
+# source and hash-locked wheels. Image builds remain offline and verify the
+# committed delivery artifact without downloading dependencies again.
+RUN cd /app/api/bundled_plugins \
+    && python package_plugins.py verify
+
 # Prepare entrypoint script
 COPY --chown=dify:dify --chmod=755 api/docker/entrypoint.sh /entrypoint.sh
 

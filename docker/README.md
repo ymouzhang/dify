@@ -32,6 +32,14 @@ Welcome to the new `docker` directory for deploying Dify using Docker Compose. T
    docker compose up -d
    ```
 
+   The custom worker image installs the pinned OpenAI API-compatible and Agent
+   plugins from packages embedded in the Dify API source. The one-shot
+   `plugin_initializer` handles existing workspaces; the same idempotent path
+   runs asynchronously for new workspaces. No Marketplace connection is needed
+   for these two plugins. See the
+   [bundled offline plugin design and operations guide](../api/bundled_plugins/DESIGN.zh-CN.md)
+   for architecture, validation, upgrades, and troubleshooting.
+
 4. **SSL Certificate Setup**:
    - Refer to `docker/certbot/README.md` to set up SSL certificates using Certbot.
 5. **OpenTelemetry Collector Setup**:

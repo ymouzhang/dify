@@ -1,5 +1,6 @@
 exclude = [
     "migrations/*",
+    "api/bundled_plugins/plugins",
     ".git",
     ".git/**",
 ]

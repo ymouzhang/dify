@@ -297,7 +297,10 @@ services:
   # The Celery worker for processing all queues (dataset, workflow, mail, etc.)
   worker:
     <<: *shared-worker-config
-    image: langgenius/dify-api:1.16.1
+    image: ymouzhang/dify-api:1.16.1-bundled
+    build:
+      context: ..
+      dockerfile: api/Dockerfile
     environment:
       MODE: worker
       SENTRY_DSN: ${API_SENTRY_DSN:-}
@@ -342,6 +345,39 @@ services:
     networks:
       - ssrf_proxy_network
       - default
+
+  # One-shot installer for workspaces that existed before bundled plugins were enabled.
+  # New workspaces are handled by the patched Celery task in the worker image.
+  plugin_initializer:
+    <<: *shared-api-worker-config
+    image: ymouzhang/dify-api:1.16.1-bundled
+    build:
+      context: ..
+      dockerfile: api/Dockerfile
+    restart: "no"
+    entrypoint: ["python", "/app/api/bundled_plugin_initializer.py"]
+    environment:
+      MODE: api
+      MIGRATION_ENABLED: "false"
+      PLUGIN_MAX_PACKAGE_SIZE: ${PLUGIN_MAX_PACKAGE_SIZE:-52428800}
+      INNER_API_KEY_FOR_PLUGIN: ${PLUGIN_DIFY_INNER_API_KEY:-QaHbTe77CtuXmsfyhR7+vRjI/+XbV1AaFy691iy+kGDv2Jvy0/eAh8Y1}
+    depends_on:
+      api:
+        condition: service_healthy
+      worker:
+        condition: service_started
+      plugin_daemon:
+        condition: service_started
+      db_postgres:
+        condition: service_healthy
+        required: false
+      db_mysql:
+        condition: service_healthy
+        required: false
+      redis:
+        condition: service_started
+    volumes:
+      - ./volumes/app/storage:/app/api/storage
 
   # worker_beat service
   # Celery beat for scheduling periodic tasks.

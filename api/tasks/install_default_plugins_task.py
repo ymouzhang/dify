@@ -9,6 +9,11 @@ from core.helper import marketplace
 from core.plugin.entities.plugin_daemon import PluginInstallTaskStatus
 from core.plugin.plugin_service import PluginService
 from services.model_provider_service import ModelProviderService
+from services.plugin.bundled_plugins import (
+    install_bundled_plugins,
+    load_bundled_plugins,
+    wait_for_plugin_install,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -73,26 +78,34 @@ def configure_default_models_task(self, tenant_id: str, plugin_install_task_id: 
 
 @shared_task(queue="plugin")
 def install_default_plugins_task(tenant_id: str, plugin_ids: list[str]) -> None:
-    """Install the latest marketplace versions of the configured plugins."""
+    """Install pinned local packages first and use Marketplace only for other IDs."""
     if not plugin_ids:
         return
 
     try:
-        manifests = {manifest.plugin_id: manifest for manifest in marketplace.batch_fetch_plugin_manifests(plugin_ids)}
+        bundled_ids = set(load_bundled_plugins())
+        bundled_response = install_bundled_plugins(tenant_id, plugin_ids)
+        wait_for_plugin_install(tenant_id, bundled_response)
+
+        marketplace_ids = [plugin_id for plugin_id in plugin_ids if plugin_id not in bundled_ids]
+        manifests = (
+            {manifest.plugin_id: manifest for manifest in marketplace.batch_fetch_plugin_manifests(marketplace_ids)}
+            if marketplace_ids
+            else {}
+        )
         plugin_identifiers = [
-            manifests[plugin_id].latest_package_identifier for plugin_id in plugin_ids if plugin_id in manifests
+            manifests[plugin_id].latest_package_identifier for plugin_id in marketplace_ids if plugin_id in manifests
         ]
-        missing_plugin_ids = [plugin_id for plugin_id in plugin_ids if plugin_id not in manifests]
+        missing_plugin_ids = [plugin_id for plugin_id in marketplace_ids if plugin_id not in manifests]
         if missing_plugin_ids:
             logger.warning("Default plugins not found in marketplace: %s", ", ".join(missing_plugin_ids))
-        if not plugin_identifiers:
-            return
-
-        response = PluginService.install_from_marketplace_pkg(tenant_id, plugin_identifiers)
+        response = (
+            PluginService.install_from_marketplace_pkg(tenant_id, plugin_identifiers) if plugin_identifiers else None
+        )
         if dify_config.NEW_USER_DEFAULT_MODELS:
             configure_default_models_task.delay(
                 tenant_id,
-                None if response.all_installed else response.task_id,
+                None if response is None or response.all_installed else response.task_id,
             )
     except Exception:
         logger.exception("Failed to install default plugins for tenant %s", tenant_id)
